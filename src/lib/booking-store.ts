@@ -127,6 +127,7 @@ function load() {
     state = seed();
   }
   sweepExpired();
+  cachedSnapshot = state;
   persist();
 }
 
@@ -139,12 +140,10 @@ function persist() {
   }
 }
 
-let snapshotVersion = 0;
 let cachedSnapshot: StoreState = state;
 
 function emit() {
   persist();
-  snapshotVersion += 1;
   cachedSnapshot = { ...state };
   listeners.forEach((l) => l());
 }
@@ -157,8 +156,7 @@ function subscribe(listener: () => void) {
 
 function getSnapshot(): StoreState {
   load();
-  if (cachedSnapshot !== state && snapshotVersion === 0) cachedSnapshot = state;
-  return cachedSnapshot === state ? state : cachedSnapshot;
+  return cachedSnapshot;
 }
 
 const serverSnapshot: StoreState = { bookings: [], audit: [], notifications: [], seq: 0 };
