@@ -53,7 +53,7 @@ function seed(): StoreState {
     const createdAt = t - minutesAgo * 60 * 1000;
     const booking: Booking = {
       id: uid(),
-      reference: `EVT-2026-${String(1000 + state.seq).slice(1)}`,
+      reference: `EVT-2027-${String(1000 + state.seq).slice(1)}`,
       stallId,
       customerName: customer,
       companyName: company,
@@ -264,7 +264,7 @@ export interface BookingInput {
 
 function nextReference() {
   state.seq += 1;
-  return `EVT-2026-${String(1000 + state.seq).slice(1)}`;
+  return `EVT-2027-${String(1000 + state.seq).slice(1)}`;
 }
 
 /** Atomic create: re-checks availability immediately before writing. */

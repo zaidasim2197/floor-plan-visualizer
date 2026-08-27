@@ -137,7 +137,7 @@ export function FloorMap({ statusMap, selectedId, onSelect, className }: FloorMa
     <div className={cn("relative overflow-hidden rounded-md border border-border bg-surface-2", className)}>
       <div
         ref={containerRef}
-        className={cn("relative h-[420px] touch-none select-none sm:h-[560px]", dragging ? "cursor-grabbing" : "cursor-grab")}
+        className={cn("relative h-[340px] xs:h-[400px] sm:h-[520px] md:h-[580px] touch-none select-none", dragging ? "cursor-grabbing" : "cursor-grab")}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
@@ -324,8 +324,9 @@ export function FloorMap({ statusMap, selectedId, onSelect, className }: FloorMa
           </button>
         </div>
 
-        <p className="pointer-events-none absolute left-3 top-3 rounded-sm border border-border bg-background/85 px-2 py-1 text-[11px] text-muted-foreground">
-          Scroll or pinch to zoom · drag to pan
+        <p className="pointer-events-none absolute left-2 top-2 sm:left-3 sm:top-3 rounded-sm border border-border bg-background/90 px-2 py-1 text-[10px] sm:text-[11px] text-muted-foreground shadow-xs">
+          <span className="hidden sm:inline">Scroll or pinch to zoom · drag to pan</span>
+          <span className="sm:hidden">Pinch to zoom · Drag to pan</span>
         </p>
       </div>
     </div>

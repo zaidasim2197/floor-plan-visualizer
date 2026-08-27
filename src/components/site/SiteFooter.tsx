@@ -1,12 +1,16 @@
 import { Link } from "@tanstack/react-router";
 import { eventConfig } from "@/config/event";
+import { BrandLogo } from "@/components/site/BrandLogo";
 
 export function SiteFooter() {
   return (
     <footer className="mt-20 border-t border-border bg-ink text-ink-foreground">
       <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-4">
         <div className="lg:col-span-2">
-          <p className="text-lg font-bold tracking-tight">{eventConfig.name}</p>
+          <div className="flex items-center gap-3">
+            <BrandLogo className="h-8 w-8" />
+            <p className="text-lg font-bold tracking-tight">{eventConfig.name}</p>
+          </div>
           <p className="mt-2 max-w-md text-sm opacity-70">{eventConfig.description}</p>
           <p className="mt-4 text-sm opacity-70">
             {eventConfig.dateLabel} · {eventConfig.venue.name}, {eventConfig.venue.city}

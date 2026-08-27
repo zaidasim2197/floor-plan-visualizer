@@ -116,7 +116,7 @@ function AboutPage() {
           <div className="mt-10 grid gap-6 md:grid-cols-2">
             <div className="rounded-lg border border-border bg-background p-6">
               <span className="inline-block rounded-md bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                Day 1 — 18 November 2026
+                Day 1 — 28 January 2027
               </span>
               <h3 className="mt-4 text-lg font-bold text-foreground">Grand Opening & Keynote Showcases</h3>
               <ul className="mt-4 space-y-2.5 text-sm text-muted-foreground">
@@ -130,7 +130,7 @@ function AboutPage() {
 
             <div className="rounded-lg border border-border bg-background p-6">
               <span className="inline-block rounded-md bg-copper/10 px-3 py-1 text-xs font-bold text-copper">
-                Day 2 — 19 November 2026
+                Day 2 — 29 January 2027
               </span>
               <h3 className="mt-4 text-lg font-bold text-foreground">Buyer Roundtables & Partnership Signings</h3>
               <ul className="mt-4 space-y-2.5 text-sm text-muted-foreground">

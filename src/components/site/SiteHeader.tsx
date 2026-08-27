@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
 import { eventConfig } from "@/config/event";
+import { BrandLogo } from "@/components/site/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -20,11 +21,10 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-border bg-background/92 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link to="/" className="flex min-w-0 items-center gap-3" onClick={() => setOpen(false)}>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-primary text-sm font-extrabold text-primary-foreground">
-            ME
-          </span>
+          <BrandLogo className="h-9 w-9" />
           <span className="min-w-0">
-            <span className="block truncate text-sm font-bold tracking-tight">{eventConfig.name}</span>
+            <span className="hidden sm:block truncate text-sm font-bold tracking-tight">{eventConfig.name}</span>
+            <span className="block sm:hidden truncate text-sm font-bold tracking-tight">Marriott Expo 2027</span>
             <span className="block truncate text-[11px] text-muted-foreground">{eventConfig.dateLabel}</span>
           </span>
         </Link>

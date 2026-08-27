@@ -235,7 +235,7 @@ function Index() {
       <section className="border-t border-border bg-ink text-ink-foreground py-16">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 text-center">
           <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Secure Your Space at Marriott Expo 2026
+            Secure Your Space at Marriott Expo 2027
           </h2>
           <p className="mt-3 max-w-2xl mx-auto text-sm opacity-80">
             Exhibition spaces are limited and assigned on a first-come, first-served basis. Reserve your preferred location today.
@@ -248,7 +248,7 @@ function Index() {
             </Button>
             <Button asChild size="lg" variant="outline-dark">
               <a
-                href={whatsappLink(eventConfig.contact.whatsapp[0], "Hello, I would like to inquire about exhibiting at Marriott Expo 2026.")}
+                href={whatsappLink(eventConfig.contact.whatsapp[0], "Hello, I would like to inquire about exhibiting at Marriott Expo 2027.")}
                 target="_blank"
                 rel="noreferrer"
               >

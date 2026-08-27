@@ -78,13 +78,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Marriott Exhibition & Trade Expo 2026 — Official Booking Portal" },
+      { title: "Marriott Exhibition & Trade Expo 2027 — Official Booking Portal" },
       {
         name: "description",
         content:
-          "Official exhibition space booking platform for Marriott Exhibition & Trade Expo 2026. Reserve your stall on the interactive floor map.",
+          "Official exhibition space booking platform for Marriott Exhibition & Trade Expo 2027. Reserve your stall on the interactive floor map.",
       },
-      { property: "og:title", content: "Marriott Exhibition & Trade Expo 2026" },
+      { property: "og:title", content: "Marriott Exhibition & Trade Expo 2027" },
       {
         property: "og:description",
         content:
