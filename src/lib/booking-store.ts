@@ -92,8 +92,10 @@ function seed(): StoreState {
     paymentSubmittedAt: t - 45 * 60 * 1000,
     paymentReference: "TRX-448233",
   });
+  const seedNames = ["Zara Malik", "Faisal Sheikh", "Nida Aslam", "Rehan Qureshi", "Maria Yousuf"];
+  const seedCompanies = ["Arcadia Textiles", "Helix Robotics", "Bluepeak Pharma", "Sona Ceramics", "Tallgrass Agri"];
   ["A01", "B05", "C01", "C05", "D01"].forEach((id, i) =>
-    mk(id, "CONFIRMED", ["Zara Malik", "Faisal Sheikh", "Nida Aslam", "Rehan Qureshi", "Maria Yousuf"][i], ["Arcadia Textiles", "Helix Robotics", "Bluepeak Pharma", "Sona Ceramics", "Tallgrass Agri"][i], 600 + i * 30, {
+    mk(id, "CONFIRMED", seedNames[i] ?? "Exhibitor", seedCompanies[i] ?? "Company", 600 + i * 30, {
       confirmedAt: t - (500 + i * 20) * 60 * 1000,
     }),
   );

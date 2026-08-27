@@ -10,11 +10,36 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AttendeesRouteImport } from './routes/attendees'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FloorPlanRouteImport } from './routes/floor-plan'
+import { Route as BookStallIdRouteImport } from './routes/book.$stallId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AttendeesRoute = AttendeesRouteImport.update({
+  id: '/attendees',
+  path: '/attendees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FloorPlanRoute = FloorPlanRouteImport.update({
@@ -22,31 +47,78 @@ const FloorPlanRoute = FloorPlanRouteImport.update({
   path: '/floor-plan',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BookStallIdRoute = BookStallIdRouteImport.update({
+  id: '/book/$stallId',
+  path: '/book/$stallId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
+  '/attendees': typeof AttendeesRoute
+  '/contact': typeof ContactRoute
   '/floor-plan': typeof FloorPlanRoute
+  '/book/$stallId': typeof BookStallIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
+  '/attendees': typeof AttendeesRoute
+  '/contact': typeof ContactRoute
   '/floor-plan': typeof FloorPlanRoute
+  '/book/$stallId': typeof BookStallIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
+  '/attendees': typeof AttendeesRoute
+  '/contact': typeof ContactRoute
   '/floor-plan': typeof FloorPlanRoute
+  '/book/$stallId': typeof BookStallIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/floor-plan'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/admin'
+    | '/attendees'
+    | '/contact'
+    | '/floor-plan'
+    | '/book/$stallId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/floor-plan'
-  id: '__root__' | '/' | '/floor-plan'
+  to:
+    | '/'
+    | '/about'
+    | '/admin'
+    | '/attendees'
+    | '/contact'
+    | '/floor-plan'
+    | '/book/$stallId'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/admin'
+    | '/attendees'
+    | '/contact'
+    | '/floor-plan'
+    | '/book/$stallId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  AdminRoute: typeof AdminRoute
+  AttendeesRoute: typeof AttendeesRoute
+  ContactRoute: typeof ContactRoute
   FloorPlanRoute: typeof FloorPlanRoute
+  BookStallIdRoute: typeof BookStallIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,6 +130,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/attendees': {
+      id: '/attendees'
+      path: '/attendees'
+      fullPath: '/attendees'
+      preLoaderRoute: typeof AttendeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/floor-plan': {
       id: '/floor-plan'
       path: '/floor-plan'
@@ -65,12 +165,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FloorPlanRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/book/$stallId': {
+      id: '/book/$stallId'
+      path: '/book/$stallId'
+      fullPath: '/book/$stallId'
+      preLoaderRoute: typeof BookStallIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  AdminRoute: AdminRoute,
+  AttendeesRoute: AttendeesRoute,
+  ContactRoute: ContactRoute,
   FloorPlanRoute: FloorPlanRoute,
+  BookStallIdRoute: BookStallIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

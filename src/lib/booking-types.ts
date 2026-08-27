@@ -39,19 +39,19 @@ export interface Booking {
   amount: number;
   status: BookingStatus;
   paymentStatus: PaymentStatus;
-  paymentReference?: string;
+  paymentReference?: string | undefined;
   createdAt: number;
   expiresAt: number;
-  paymentSubmittedAt?: number;
-  confirmedAt?: number;
-  cancelledAt?: number;
+  paymentSubmittedAt?: number | undefined;
+  confirmedAt?: number | undefined;
+  cancelledAt?: number | undefined;
   source: "PUBLIC" | "ADMIN";
-  conflictReason?: string;
+  conflictReason?: string | undefined;
 }
 
 export interface AuditEvent {
   id: string;
-  bookingRef?: string;
+  bookingRef?: string | undefined;
   action: string;
   actor: string;
   details: string;
@@ -60,7 +60,7 @@ export interface AuditEvent {
 
 export interface NotificationRecord {
   id: string;
-  bookingRef?: string;
+  bookingRef?: string | undefined;
   recipient: string;
   audience: "ADMIN" | "CUSTOMER";
   subject: string;
@@ -73,10 +73,10 @@ export const ACTIVE_STATUSES: BookingStatus[] = ["PAYMENT_PENDING", "PAYMENT_REV
 
 export const statusLabel: Record<StallStatus, string> = {
   AVAILABLE: "Available",
-  PAYMENT_PENDING: "Payment pending",
-  PAYMENT_REVIEW: "Payment under review",
+  PAYMENT_PENDING: "On hold",
+  PAYMENT_REVIEW: "On hold",
   CONFIRMED: "Confirmed",
-  EXPIRED: "Expired",
-  CANCELLED: "Cancelled",
-  CONFLICT: "Conflict",
+  EXPIRED: "Available",
+  CANCELLED: "Available",
+  CONFLICT: "On hold",
 };

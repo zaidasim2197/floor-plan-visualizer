@@ -8,7 +8,7 @@ export const eventConfig = {
   tagline: "Where industry leaders, innovators and buyers meet.",
   description:
     "A two-day curated exhibition bringing together manufacturers, technology providers, distributors and enterprise buyers under one roof.",
-  edition: "2026 Edition",
+  edition: "",
   startDate: "2026-11-18T09:00:00+05:00",
   endDate: "2026-11-19T18:00:00+05:00",
   dateLabel: "18 – 19 November 2026",

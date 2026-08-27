@@ -36,9 +36,7 @@ const facilityText: Record<string, string> = {
 export const legendItems: { status: StallStatus; swatch: string }[] = [
   { status: "AVAILABLE", swatch: "var(--map-available)" },
   { status: "PAYMENT_PENDING", swatch: "var(--map-pending)" },
-  { status: "PAYMENT_REVIEW", swatch: "var(--map-review)" },
   { status: "CONFIRMED", swatch: "var(--map-confirmed)" },
-  { status: "CONFLICT", swatch: "var(--map-blocked)" },
 ];
 
 export function FloorMapLegend({ className }: { className?: string }) {

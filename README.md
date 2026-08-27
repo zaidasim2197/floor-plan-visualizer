@@ -1,24 +1,47 @@
-# Floor Plan Visualizer
+# Marriott Exhibition & Trade Expo 2026 — Space Booking Platform
 
-I have attached the sample images of floor plan don't copy exact and also the MD file includes all instructions.. don't make the database and all just the UI for flow also I'll deploy the code to netily add appropriate netlify.toml etc everything so as to make sure its build will get successful and properly working everything.
+A high-performance, functional end-to-end exhibition floor map visualizer and stall booking platform architecture.
 
-This project was built with [Lovable](https://lovable.dev).
+## Overview
 
-## Build with Lovable
+This project provides a full-stack interactive booking engine for trade exhibitions and commercial expos.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/14eb3ed1-068b-4c82-b346-5599825aea94).
+### Key Capabilities
+- **Interactive Floor Map**: Canvas/SVG floor plan with real-time availability states (`AVAILABLE`, `ON_HOLD`, `CONFIRMED`).
+- **Atomic Booking Engine**: 30-minute temporary reservation lock preventing double bookings across concurrent users.
+- **Payment & Evidence Verification**: WhatsApp receipt routing and payment reference review workflow.
+- **Automatic Expiry & Conflict Management**: Automated background hold expiry with manual admin conflict resolution for late payments.
+- **Operations Admin Portal (`/admin`)**: Protected management dashboard for real-time stall management, manual booking creation, mock email logs, and complete audit trail.
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+## Getting Started
 
-## Development
+### Requirements
+- Node.js 18+ or Bun
+- npm, pnpm, or bun
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+### Local Development
 
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+```bash
+# Clone the repository
+git clone <repository-url>
+cd floor-plan-visualizer
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
 ```
+
+### Production Build
+
+```bash
+npm run build
+npm run preview
+```
+
+## Admin Portal Access (Demo Environment)
+
+- **URL**: `/admin`
+- **Username**: `admin`
+- **Password**: `Admin@123`
