@@ -63,7 +63,7 @@ export const facilities: Facility[] = [
 ];
 
 export const aisles = [
-  { label: "Main Aisle", x: 108, y: 440, w: 976, h: 24, vertical: false },
+  { label: "", x: 108, y: 440, w: 976, h: 24, vertical: false },
   { label: "", x: 320, y: 170, w: 44, h: 400, vertical: true },
   { label: "", x: 620, y: 170, w: 44, h: 400, vertical: true },
   { label: "", x: 900, y: 170, w: 44, h: 400, vertical: true },
