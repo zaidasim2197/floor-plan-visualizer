@@ -40,6 +40,12 @@ export const eventConfig = {
     sandboxUrl: "https://sandbox.payfast.co.za/eng/process",
     passphrase: "",
   },
+  safepay: {
+    publicKey: "sec_04fcd032-7a56-440e-a29c-95ac88b7d52f",
+    secretKey: "7045f745c5708c7c938544730e5ebe363e19108f9831b3903aa8bd8bdef93773",
+    sandboxCheckoutUrl: "https://sandbox.api.getsafepay.com/checkout/pay",
+    environment: "sandbox",
+  },
   floorPlanLabel: "Demo Exhibition Layout",
 } as const;
 

@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AttendeesRouteImport } from './routes/attendees'
+import { Route as ConfirmRouteImport } from './routes/confirm'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FloorPlanRouteImport } from './routes/floor-plan'
 import { Route as BookStallIdRouteImport } from './routes/book.$stallId'
@@ -37,6 +38,11 @@ const AttendeesRoute = AttendeesRouteImport.update({
   path: '/attendees',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConfirmRoute = ConfirmRouteImport.update({
+  id: '/confirm',
+  path: '/confirm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
   '/attendees': typeof AttendeesRoute
+  '/confirm': typeof ConfirmRoute
   '/contact': typeof ContactRoute
   '/floor-plan': typeof FloorPlanRoute
   '/book/$stallId': typeof BookStallIdRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
   '/attendees': typeof AttendeesRoute
+  '/confirm': typeof ConfirmRoute
   '/contact': typeof ContactRoute
   '/floor-plan': typeof FloorPlanRoute
   '/book/$stallId': typeof BookStallIdRoute
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
   '/attendees': typeof AttendeesRoute
+  '/confirm': typeof ConfirmRoute
   '/contact': typeof ContactRoute
   '/floor-plan': typeof FloorPlanRoute
   '/book/$stallId': typeof BookStallIdRoute
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/attendees'
+    | '/confirm'
     | '/contact'
     | '/floor-plan'
     | '/book/$stallId'
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/attendees'
+    | '/confirm'
     | '/contact'
     | '/floor-plan'
     | '/book/$stallId'
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/attendees'
+    | '/confirm'
     | '/contact'
     | '/floor-plan'
     | '/book/$stallId'
@@ -116,6 +128,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRoute
   AttendeesRoute: typeof AttendeesRoute
+  ConfirmRoute: typeof ConfirmRoute
   ContactRoute: typeof ContactRoute
   FloorPlanRoute: typeof FloorPlanRoute
   BookStallIdRoute: typeof BookStallIdRoute
@@ -151,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AttendeesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/confirm': {
+      id: '/confirm'
+      path: '/confirm'
+      fullPath: '/confirm'
+      preLoaderRoute: typeof ConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact': {
       id: '/contact'
       path: '/contact'
@@ -180,6 +200,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AdminRoute: AdminRoute,
   AttendeesRoute: AttendeesRoute,
+  ConfirmRoute: ConfirmRoute,
   ContactRoute: ContactRoute,
   FloorPlanRoute: FloorPlanRoute,
   BookStallIdRoute: BookStallIdRoute,

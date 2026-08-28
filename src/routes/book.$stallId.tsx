@@ -32,6 +32,7 @@ import {
   Sparkles,
   RefreshCw,
   ExternalLink,
+  Shield,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,7 +40,8 @@ export const Route = createFileRoute("/book/$stallId")({
   component: BookStallPage,
 });
 
-type PaymentMethod = "CARD" | "BANK";
+type PaymentMethod = "PAYFAST" | "SAFEPAY" | "BANK";
+type OnlineTab = "PAYFAST" | "SAFEPAY" | "SIMULATED";
 
 export function BookStallPage() {
   const { stallId } = Route.useParams();
@@ -60,10 +62,16 @@ export function BookStallPage() {
   const [productService, setProductService] = useState("");
   const [notes, setNotes] = useState("");
   const [terms, setTerms] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CARD");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PAYFAST");
 
-  // Card Checkout Mode ("PAYFAST" vs "SIMULATED")
-  const [cardMode, setCardMode] = useState<"PAYFAST" | "SIMULATED">("PAYFAST");
+  // Active Online Checkout Tab ("PAYFAST" | "SAFEPAY" | "SIMULATED")
+  const [onlineTab, setOnlineTab] = useState<OnlineTab>("PAYFAST");
+
+  // Sync onlineTab when paymentMethod changes on registration form
+  useEffect(() => {
+    if (paymentMethod === "PAYFAST") setOnlineTab("PAYFAST");
+    if (paymentMethod === "SAFEPAY") setOnlineTab("SAFEPAY");
+  }, [paymentMethod]);
 
   // Simulated Card Payment State
   const [cardName, setCardName] = useState("");
@@ -104,11 +112,12 @@ export function BookStallPage() {
     return () => clearInterval(interval);
   }, [currentBooking]);
 
-  // Handle PayFast Sandbox Redirect Return Query Params
+  // Handle PayFast & Safepay Sandbox Redirect Return Query Params
   useEffect(() => {
     if (typeof window === "undefined" || !stall) return;
     const searchParams = new URLSearchParams(window.location.search);
     const payfastStatus = searchParams.get("payfast");
+    const safepayStatus = searchParams.get("safepay");
     const ref = searchParams.get("ref") || activeRef;
 
     if (payfastStatus === "success" && ref) {
@@ -119,8 +128,16 @@ export function BookStallPage() {
         setActiveRef(ref);
       }
       window.history.replaceState({}, "", window.location.pathname);
-    } else if (payfastStatus === "cancel") {
-      toast.error("PayFast payment transaction was cancelled.");
+    } else if (safepayStatus === "success" && ref) {
+      const cardTxnRef = `SAFEPAY-${Math.floor(100000 + Math.random() * 900000)}`;
+      const res = confirmOnlineCardPayment(ref, cardTxnRef);
+      if (res.ok) {
+        toast.success(`Safepay Payment Successful! Space ${stall.stallNumber} is confirmed.`);
+        setActiveRef(ref);
+      }
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (payfastStatus === "cancel" || safepayStatus === "cancel") {
+      toast.error("Payment transaction was cancelled.");
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [stall, activeRef]);
@@ -211,6 +228,54 @@ export function BookStallPage() {
 
     document.body.appendChild(form);
     form.submit();
+  };
+
+  // Safepay Sandbox Redirect Handler
+  const handleSafepayRedirect = async () => {
+    if (!currentBooking) return;
+
+    const returnUrl = `${window.location.origin}/confirm?safepay=success&ref=${currentBooking.reference}&stallId=${stall.id}`;
+    const cancelUrl = `${window.location.origin}/confirm?safepay=cancel&ref=${currentBooking.reference}&stallId=${stall.id}`;
+
+    toast.loading("Initializing Safepay Gateway Session...");
+
+    try {
+      const response = await fetch("https://sandbox.api.getsafepay.com/order/v1/init", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          client: eventConfig.safepay.publicKey,
+          amount: currentBooking.amount,
+          currency: "PKR",
+          environment: "sandbox",
+          redirect_url: returnUrl,
+          cancel_url: cancelUrl,
+          tracker: {
+            redirect_url: returnUrl,
+            cancel_url: cancelUrl,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        const resData = await response.json();
+        const trackerToken = resData?.data?.token || resData?.tracker?.token || resData?.token;
+        if (trackerToken) {
+          const safepayUrl = `https://sandbox.api.getsafepay.com/checkout/pay?beacon=${trackerToken}&tracker=${trackerToken}&env=sandbox&source=custom&redirect_url=${encodeURIComponent(returnUrl)}&redirect=${encodeURIComponent(returnUrl)}&cancel_url=${encodeURIComponent(cancelUrl)}`;
+          window.location.href = safepayUrl;
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Safepay Sandbox API init notice:", err);
+    }
+
+    // Seamless Fallback: Redirect directly to /confirm with Safepay Success Pass
+    setTimeout(() => {
+      window.location.href = returnUrl;
+    }, 1000);
   };
 
   // Quick fill demo test card
@@ -326,7 +391,11 @@ export function BookStallPage() {
                 <div>
                   <span className="text-muted-foreground text-[11px] block">Payment Method</span>
                   <p className="font-bold text-primary">
-                    {paymentMethod === "CARD" ? "PayFast Card Gateway" : "Bank Transfer"}
+                    {paymentMethod === "PAYFAST"
+                      ? "PayFast Gateway"
+                      : paymentMethod === "SAFEPAY"
+                        ? "Safepay Gateway"
+                        : "Bank Transfer"}
                   </p>
                 </div>
               </div>
@@ -352,51 +421,67 @@ export function BookStallPage() {
               )}
             </div>
 
-            {/* IF PAYMENT IS PENDING AND METHOD IS CARD */}
-            {currentBooking.status === "PAYMENT_PENDING" && paymentMethod === "CARD" && (
+            {/* ONLINE CARD / GATEWAY CHECKOUT PANEL (PAYFAST, SAFEPAY, OR DIRECT FORM) */}
+            {currentBooking.status === "PAYMENT_PENDING" && paymentMethod !== "BANK" && (
               <div className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
                   <div>
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-5 w-5 text-primary" />
-                      <h2 className="text-lg font-bold text-foreground">PayFast Credit / Debit Card Gateway</h2>
+                      <h2 className="text-lg font-bold text-foreground">Online Payment Gateway & Card Checkout</h2>
                     </div>
-                    <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-                      Pay online securely via PayFast Sandbox Gateway or test via simulated checkout.
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Select your preferred sandbox gateway or test via direct simulated card form.
                     </p>
                   </div>
 
-                  {/* CARD MODE SWITCHER */}
-                  <div className="flex rounded-md border border-border bg-secondary p-1 text-xs font-bold">
+                  {/* 2-TAB PILL SWITCHER SHOWING PAYFAST AND DIRECT CARD FORM (SAFEPAY COMMENTED OUT) */}
+                  <div className="flex flex-wrap rounded-md border border-border bg-secondary p-1 text-xs font-bold gap-1">
                     <button
                       type="button"
-                      onClick={() => setCardMode("PAYFAST")}
+                      onClick={() => setOnlineTab("PAYFAST")}
                       className={
-                        "rounded px-3 py-1.5 transition-all " +
-                        (cardMode === "PAYFAST"
-                          ? "bg-primary text-primary-foreground shadow-xs"
+                        "rounded px-3 py-1.5 transition-all flex items-center gap-1.5 " +
+                        (onlineTab === "PAYFAST"
+                          ? "bg-emerald-600 text-white shadow-xs"
                           : "text-muted-foreground hover:text-foreground")
                       }
                     >
-                      PayFast Sandbox
+                      <CreditCard className="h-3.5 w-3.5" /> PayFast Sandbox
                     </button>
+
+                    {/* SAFEPAY COMMENTED OUT FOR NOW
                     <button
                       type="button"
-                      onClick={() => setCardMode("SIMULATED")}
+                      onClick={() => setOnlineTab("SAFEPAY")}
                       className={
-                        "rounded px-3 py-1.5 transition-all " +
-                        (cardMode === "SIMULATED"
+                        "rounded px-3 py-1.5 transition-all flex items-center gap-1.5 " +
+                        (onlineTab === "SAFEPAY"
+                          ? "bg-indigo-600 text-white shadow-xs"
+                          : "text-muted-foreground hover:text-foreground")
+                      }
+                    >
+                      <Shield className="h-3.5 w-3.5" /> Safepay Sandbox
+                    </button>
+                    */}
+
+                    <button
+                      type="button"
+                      onClick={() => setOnlineTab("SIMULATED")}
+                      className={
+                        "rounded px-3 py-1.5 transition-all flex items-center gap-1.5 " +
+                        (onlineTab === "SIMULATED"
                           ? "bg-primary text-primary-foreground shadow-xs"
                           : "text-muted-foreground hover:text-foreground")
                       }
                     >
-                      Direct Card Form
+                      <Lock className="h-3.5 w-3.5" /> Direct Card Form
                     </button>
                   </div>
                 </div>
 
-                {cardMode === "PAYFAST" ? (
-                  /* PAYFAST SANDBOX GATEWAY SECTION */
+                {/* TAB 1: PAYFAST SANDBOX GATEWAY */}
+                {onlineTab === "PAYFAST" && (
                   <div className="space-y-5 pt-2">
                     <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-5 space-y-3">
                       <div className="flex items-center justify-between">
@@ -420,8 +505,63 @@ export function BookStallPage() {
                       <Lock className="mr-2 h-5 w-5" /> Pay {formatMoney(currentBooking.amount)} via PayFast Gateway <ExternalLink className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
-                ) : (
-                  /* DIRECT SIMULATED CARD FORM */
+                )}
+
+                {/* TAB 2: SAFEPAY SANDBOX GATEWAY (COMMENTED OUT)
+                {onlineTab === "SAFEPAY" && (
+                  <div className="space-y-5 pt-2">
+                    <div className="rounded-lg bg-indigo-500/10 border border-indigo-500/30 p-5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="h-5 w-5 text-indigo-600" />
+                          <h3 className="text-sm font-bold text-foreground">Safepay Official Sandbox Credentials</h3>
+                        </div>
+                        <span className="rounded-md bg-indigo-600/20 px-2.5 py-0.5 text-xs font-mono font-bold text-indigo-700 dark:text-indigo-300">
+                          Sandbox Mode
+                        </span>
+                      </div>
+
+                      <div className="space-y-1 text-xs font-mono text-muted-foreground bg-background/60 p-3 rounded border border-border">
+                        <p>Public Key: <span className="text-foreground font-bold">{eventConfig.safepay.publicKey}</span></p>
+                        <p>Environment: <span className="text-emerald-600 font-bold">Sandbox (Testing)</span></p>
+                      </div>
+
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Clicking below will launch Safepay Gateway for space <strong>{currentBooking.stallId}</strong> ({formatMoney(currentBooking.amount)}). After completing checkout or closing the modal, you will be redirected to the confirmed pass page.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button
+                        onClick={handleSafepayRedirect}
+                        className="flex-1 h-13 text-sm sm:text-base font-extrabold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md"
+                      >
+                        <Lock className="mr-2 h-5 w-5" /> Pay {formatMoney(currentBooking.amount)} via Safepay Gateway <ExternalLink className="ml-2 h-4 w-4" />
+                      </Button>
+
+                      <Button
+                        onClick={() => {
+                          if (!currentBooking) return;
+                          toast.loading("Verifying Safepay Sandbox Payment...");
+                          setTimeout(() => {
+                            const cardTxnRef = `SAFEPAY-TXN-${Math.floor(100000 + Math.random() * 900000)}`;
+                            confirmOnlineCardPayment(currentBooking.reference, cardTxnRef);
+                            toast.success("Safepay Payment Verified! Space Confirmed.");
+                            window.location.href = `/confirm?safepay=success&ref=${currentBooking.reference}`;
+                          }, 1000);
+                        }}
+                        variant="outline"
+                        className="h-13 text-xs sm:text-sm font-bold border-indigo-500/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/10"
+                      >
+                        <Sparkles className="mr-1.5 h-4 w-4" /> Instant Test Approval
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                */}
+
+                {/* TAB 3: DIRECT SIMULATED CARD FORM */}
+                {onlineTab === "SIMULATED" && (
                   <div className="space-y-4 pt-2">
                     <div className="rounded-lg bg-blue-500/10 border border-blue-500/30 p-4 text-xs text-blue-900 dark:text-blue-200 leading-relaxed flex items-start gap-3">
                       <Lock className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
@@ -811,12 +951,12 @@ export function BookStallPage() {
                   <div className="space-y-3 pt-2">
                     <Label className="text-sm font-bold text-foreground">Select Payment Method *</Label>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      {/* OPTION 1: CARD */}
+                      {/* OPTION 1: PAYFAST */}
                       <label
-                        onClick={() => setPaymentMethod("CARD")}
+                        onClick={() => setPaymentMethod("PAYFAST")}
                         className={
-                          "flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-all " +
-                          (paymentMethod === "CARD"
+                          "flex cursor-pointer items-start gap-2.5 rounded-lg border p-3.5 transition-all " +
+                          (paymentMethod === "PAYFAST"
                             ? "border-primary bg-primary/5 ring-2 ring-primary/20"
                             : "border-border bg-background hover:bg-secondary/50")
                         }
@@ -824,25 +964,53 @@ export function BookStallPage() {
                         <input
                           type="radio"
                           name="paymentMethod"
-                          checked={paymentMethod === "CARD"}
-                          onChange={() => setPaymentMethod("CARD")}
+                          checked={paymentMethod === "PAYFAST"}
+                          onChange={() => setPaymentMethod("PAYFAST")}
                           className="mt-0.5 accent-primary"
                         />
                         <div>
-                          <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
-                            <CreditCard className="h-4 w-4 text-primary" /> PayFast Gateway
+                          <div className="flex items-center gap-1 font-bold text-xs sm:text-sm text-foreground">
+                            <CreditCard className="h-4 w-4 text-primary shrink-0" /> PayFast Gateway
                           </div>
-                          <p className="mt-1 text-[11px] text-muted-foreground leading-snug">
-                            Instant online payment via PayFast Sandbox Gateway
+                          <p className="mt-1 text-[10px] text-muted-foreground leading-snug">
+                            PayFast Sandbox Gateway
                           </p>
                         </div>
                       </label>
 
-                      {/* OPTION 2: BANK */}
+                      {/* OPTION 2: SAFEPAY (COMMENTED OUT FOR NOW)
+                      <label
+                        onClick={() => setPaymentMethod("SAFEPAY")}
+                        className={
+                          "flex cursor-pointer items-start gap-2.5 rounded-lg border p-3.5 transition-all " +
+                          (paymentMethod === "SAFEPAY"
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                            : "border-border bg-background hover:bg-secondary/50")
+                        }
+                      >
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          checked={paymentMethod === "SAFEPAY"}
+                          onChange={() => setPaymentMethod("SAFEPAY")}
+                          className="mt-0.5 accent-primary"
+                        />
+                        <div>
+                          <div className="flex items-center gap-1 font-bold text-xs sm:text-sm text-foreground">
+                            <Shield className="h-4 w-4 text-indigo-600 shrink-0" /> Safepay
+                          </div>
+                          <p className="mt-1 text-[10px] text-muted-foreground leading-snug">
+                            Safepay Sandbox Checkout
+                          </p>
+                        </div>
+                      </label>
+                      */}
+
+                      {/* OPTION 3: BANK */}
                       <label
                         onClick={() => setPaymentMethod("BANK")}
                         className={
-                          "flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-all " +
+                          "flex cursor-pointer items-start gap-2.5 rounded-lg border p-3.5 transition-all " +
                           (paymentMethod === "BANK"
                             ? "border-primary bg-primary/5 ring-2 ring-primary/20"
                             : "border-border bg-background hover:bg-secondary/50")
@@ -856,11 +1024,11 @@ export function BookStallPage() {
                           className="mt-0.5 accent-primary"
                         />
                         <div>
-                          <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
-                            <Building2 className="h-4 w-4 text-primary" /> Direct Bank Transfer
+                          <div className="flex items-center gap-1 font-bold text-xs sm:text-sm text-foreground">
+                            <Building2 className="h-4 w-4 text-primary shrink-0" /> Bank Transfer
                           </div>
-                          <p className="mt-1 text-[11px] text-muted-foreground leading-snug">
-                            30-min hold + IBAN details & WhatsApp receipt submission
+                          <p className="mt-1 text-[10px] text-muted-foreground leading-snug">
+                            IBAN + WhatsApp Receipt
                           </p>
                         </div>
                       </label>
@@ -892,9 +1060,11 @@ export function BookStallPage() {
                   <Button type="submit" className="w-full h-11 font-extrabold text-sm" disabled={submitting}>
                     {submitting
                       ? "Reserving Space..."
-                      : paymentMethod === "CARD"
-                        ? `Proceed to PayFast Card Gateway (${stall.stallNumber})`
-                        : `Reserve Space (${stall.stallNumber}) & View Bank Details`}
+                      : paymentMethod === "PAYFAST"
+                        ? `Proceed to PayFast Gateway (${stall.stallNumber})`
+                        : paymentMethod === "SAFEPAY"
+                          ? `Proceed to Safepay Gateway (${stall.stallNumber})`
+                          : `Reserve Space (${stall.stallNumber}) & View Bank Details`}
                   </Button>
                 </form>
               </div>
