@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { eventConfig } from "@/config/event";
@@ -25,11 +25,20 @@ export const Route = createFileRoute("/attendees")({
 
 function AttendeesPage() {
   const state = useBookingState();
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  const confirmedBookings = useMemo(
-    () => state.bookings.filter((b) => b.status === "CONFIRMED" || b.status === "PAYMENT_REVIEW"),
-    [state.bookings],
-  );
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsAdmin(localStorage.getItem("marriott_admin_session") === "true");
+    }
+  }, []);
+
+  const displayedBookings = useMemo(() => {
+    if (isAdmin) {
+      return state.bookings.filter((b) => b.status === "CONFIRMED" || b.status === "PAYMENT_REVIEW" || b.status === "PAYMENT_PENDING");
+    }
+    return state.bookings.filter((b) => b.status === "CONFIRMED");
+  }, [state.bookings, isAdmin]);
 
   return (
     <SiteLayout>
@@ -71,8 +80,14 @@ function AttendeesPage() {
       <section className="mx-auto w-full max-w-7xl px-4 pb-20 sm:px-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-2xl font-extrabold text-foreground">Confirmed & Pending Exhibitors</h2>
-            <p className="text-sm text-muted-foreground">Updated in real-time as space holds and payments are processed.</p>
+            <h2 className="text-2xl font-extrabold text-foreground">
+              {isAdmin ? "Exhibitor Directory & Admin Status" : "Confirmed Exhibitors"}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {isAdmin
+                ? "Admin View: Real-time status logs of all confirmed, review, and hold space reservations."
+                : "Official list of confirmed participating organizations."}
+            </p>
           </div>
           <Button asChild size="sm">
             <Link to="/floor-plan">
@@ -89,18 +104,18 @@ function AttendeesPage() {
                 <th className="px-4 py-3">Company</th>
                 <th className="px-4 py-3">Product / Industry</th>
                 <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3">Status</th>
+                {isAdmin && <th className="px-4 py-3">Status</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {confirmedBookings.length === 0 ? (
+              {displayedBookings.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={isAdmin ? 5 : 4} className="px-4 py-8 text-center text-muted-foreground">
                     No confirmed bookings yet. Be the first to reserve a space!
                   </td>
                 </tr>
               ) : (
-                confirmedBookings.map((b) => {
+                displayedBookings.map((b) => {
                   const stall = stalls.find((s) => s.id === b.stallId);
                   return (
                     <tr key={b.id} className="hover:bg-secondary/40">
@@ -110,9 +125,11 @@ function AttendeesPage() {
                       </td>
                       <td className="px-4 py-3 text-muted-foreground max-w-xs truncate">{b.productService}</td>
                       <td className="px-4 py-3 text-muted-foreground">{stall?.category ?? "Exhibition Space"}</td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={b.status} />
-                      </td>
+                      {isAdmin && (
+                        <td className="px-4 py-3">
+                          <StatusBadge status={b.status} />
+                        </td>
+                      )}
                     </tr>
                   );
                 })
