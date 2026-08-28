@@ -31,6 +31,7 @@ import {
   Printer,
   Sparkles,
   RefreshCw,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -60,6 +61,9 @@ export function BookStallPage() {
   const [notes, setNotes] = useState("");
   const [terms, setTerms] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CARD");
+
+  // Card Checkout Mode ("PAYFAST" vs "SIMULATED")
+  const [cardMode, setCardMode] = useState<"PAYFAST" | "SIMULATED">("PAYFAST");
 
   // Simulated Card Payment State
   const [cardName, setCardName] = useState("");
@@ -99,6 +103,27 @@ export function BookStallPage() {
     const interval = setInterval(calc, 1000);
     return () => clearInterval(interval);
   }, [currentBooking]);
+
+  // Handle PayFast Sandbox Redirect Return Query Params
+  useEffect(() => {
+    if (typeof window === "undefined" || !stall) return;
+    const searchParams = new URLSearchParams(window.location.search);
+    const payfastStatus = searchParams.get("payfast");
+    const ref = searchParams.get("ref") || activeRef;
+
+    if (payfastStatus === "success" && ref) {
+      const cardTxnRef = `PAYFAST-${Math.floor(100000 + Math.random() * 900000)}`;
+      const res = confirmOnlineCardPayment(ref, cardTxnRef);
+      if (res.ok) {
+        toast.success(`PayFast Payment Successful! Space ${stall.stallNumber} is confirmed.`);
+        setActiveRef(ref);
+      }
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (payfastStatus === "cancel") {
+      toast.error("PayFast payment transaction was cancelled.");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [stall, activeRef]);
 
   if (!stall) {
     return (
@@ -146,6 +171,46 @@ export function BookStallPage() {
     setActiveRef(result.data.reference);
     setCardName(customerName);
     toast.success(`Temporary hold activated! Reference: ${result.data.reference}`);
+  };
+
+  // PayFast Sandbox POST Redirect Handler
+  const handlePayFastRedirect = () => {
+    if (!currentBooking) return;
+
+    const returnUrl = `${window.location.origin}/book/${stall.id}?payfast=success&ref=${currentBooking.reference}`;
+    const cancelUrl = `${window.location.origin}/book/${stall.id}?payfast=cancel&ref=${currentBooking.reference}`;
+    const notifyUrl = `${window.location.origin}/book/${stall.id}?payfast=notify&ref=${currentBooking.reference}`;
+
+    const payload: Record<string, string> = {
+      merchant_id: eventConfig.payfast.merchantId,
+      merchant_key: eventConfig.payfast.merchantKey,
+      return_url: returnUrl,
+      cancel_url: cancelUrl,
+      notify_url: notifyUrl,
+      name_first: currentBooking.customerName,
+      email_address: currentBooking.email,
+      m_payment_id: currentBooking.reference,
+      amount: currentBooking.amount.toFixed(2),
+      item_name: `Marriott Expo Space Booking - Space ${currentBooking.stallId}`,
+      item_description: `Exhibition Space Rental for Marriott Exhibition & Trade Expo 2027 (${currentBooking.companyName})`,
+    };
+
+    toast.loading("Redirecting to PayFast Payment Gateway...");
+
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = eventConfig.payfast.sandboxUrl;
+
+    Object.entries(payload).forEach(([key, value]) => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = key;
+      input.value = value;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
   };
 
   // Quick fill demo test card
@@ -261,7 +326,7 @@ export function BookStallPage() {
                 <div>
                   <span className="text-muted-foreground text-[11px] block">Payment Method</span>
                   <p className="font-bold text-primary">
-                    {paymentMethod === "CARD" ? "Online Credit Card" : "Bank Transfer"}
+                    {paymentMethod === "CARD" ? "PayFast Card Gateway" : "Bank Transfer"}
                   </p>
                 </div>
               </div>
@@ -290,98 +355,157 @@ export function BookStallPage() {
             {/* IF PAYMENT IS PENDING AND METHOD IS CARD */}
             {currentBooking.status === "PAYMENT_PENDING" && paymentMethod === "CARD" && (
               <div className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-6">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-primary" />
-                    <h2 className="text-lg font-bold text-foreground">Online Credit / Debit Card Checkout</h2>
-                  </div>
-                  <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-                    Enter your card details below to complete your payment and confirm your space instantly.
-                  </p>
-                </div>
-
-                {/* SIMULATION WARNING BANNER */}
-                <div className="rounded-lg bg-blue-500/10 border border-blue-500/30 p-4 text-xs text-blue-900 dark:text-blue-200 leading-relaxed flex items-start gap-3">
-                  <Lock className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="font-bold text-blue-950 dark:text-blue-100 uppercase tracking-wide">
-                      PROPOSAL DEMO SIMULATION NOTICE
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-5 w-5 text-primary" />
+                      <h2 className="text-lg font-bold text-foreground">PayFast Credit / Debit Card Gateway</h2>
+                    </div>
+                    <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+                      Pay online securely via PayFast Sandbox Gateway or test via simulated checkout.
                     </p>
-                    This is an interactive technical prototype demonstration. No real credit card will be charged. Payment gateway integration is simulated for client approval.
+                  </div>
+
+                  {/* CARD MODE SWITCHER */}
+                  <div className="flex rounded-md border border-border bg-secondary p-1 text-xs font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setCardMode("PAYFAST")}
+                      className={
+                        "rounded px-3 py-1.5 transition-all " +
+                        (cardMode === "PAYFAST"
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "text-muted-foreground hover:text-foreground")
+                      }
+                    >
+                      PayFast Sandbox
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCardMode("SIMULATED")}
+                      className={
+                        "rounded px-3 py-1.5 transition-all " +
+                        (cardMode === "SIMULATED"
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "text-muted-foreground hover:text-foreground")
+                      }
+                    >
+                      Direct Card Form
+                    </button>
                   </div>
                 </div>
 
-                <form onSubmit={handleSimulateCardSubmit} className="space-y-4 pt-2">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="cardName">Cardholder Name</Label>
-                      <button
-                        type="button"
-                        onClick={handleFillDemoCard}
-                        className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
+                {cardMode === "PAYFAST" ? (
+                  /* PAYFAST SANDBOX GATEWAY SECTION */
+                  <div className="space-y-5 pt-2">
+                    <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                          <h3 className="text-sm font-bold text-foreground">PayFast Official Sandbox Integration</h3>
+                        </div>
+                        <span className="rounded-md bg-emerald-600/20 px-2.5 py-0.5 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300">
+                          Merchant ID: {eventConfig.payfast.merchantId}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Clicking below will securely POST your booking reference (<strong>{currentBooking.reference}</strong>) and rental amount (<strong>{formatMoney(currentBooking.amount)}</strong>) to the official PayFast Sandbox Gateway environment.
+                      </p>
+                    </div>
+
+                    <Button
+                      onClick={handlePayFastRedirect}
+                      className="w-full h-13 text-base font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 shadow-md"
+                    >
+                      <Lock className="mr-2 h-5 w-5" /> Pay {formatMoney(currentBooking.amount)} via PayFast Gateway <ExternalLink className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  /* DIRECT SIMULATED CARD FORM */
+                  <div className="space-y-4 pt-2">
+                    <div className="rounded-lg bg-blue-500/10 border border-blue-500/30 p-4 text-xs text-blue-900 dark:text-blue-200 leading-relaxed flex items-start gap-3">
+                      <Lock className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-blue-950 dark:text-blue-100 uppercase tracking-wide">
+                          DIRECT SIMULATED CHECKOUT MODE
+                        </p>
+                        No real credit card will be charged. Test card payment directly on this page.
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleSimulateCardSubmit} className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="cardName">Cardholder Name</Label>
+                          <button
+                            type="button"
+                            onClick={handleFillDemoCard}
+                            className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
+                          >
+                            <Sparkles className="h-3 w-3" /> Auto-Fill Demo Card
+                          </button>
+                        </div>
+                        <Input
+                          id="cardName"
+                          required
+                          placeholder="e.g. Hammad Sheikh"
+                          value={cardName}
+                          onChange={(e) => setCardName(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="cardNumber">Card Number</Label>
+                        <Input
+                          id="cardNumber"
+                          required
+                          placeholder="4532 •••• •••• 8910"
+                          value={cardNumber}
+                          onChange={(e) => setCardNumber(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="cardExpiry">Expiry Date (MM/YY)</Label>
+                          <Input
+                            id="cardExpiry"
+                            required
+                            placeholder="08/28"
+                            value={cardExpiry}
+                            onChange={(e) => setCardExpiry(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="cardCvc">CVV / CVC</Label>
+                          <Input
+                            id="cardCvc"
+                            type="password"
+                            maxLength={4}
+                            required
+                            placeholder="842"
+                            value={cardCvc}
+                            onChange={(e) => setCardCvc(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="w-full h-12 text-sm font-extrabold bg-primary text-primary-foreground hover:bg-primary/90 mt-4"
+                        disabled={processingCard}
                       >
-                        <Sparkles className="h-3 w-3" /> Auto-Fill Demo Card
-                      </button>
-                    </div>
-                    <Input
-                      id="cardName"
-                      required
-                      placeholder="e.g. Hammad Sheikh"
-                      value={cardName}
-                      onChange={(e) => setCardName(e.target.value)}
-                    />
+                        {processingCard ? (
+                          <span className="flex items-center gap-2">
+                            <RefreshCw className="h-4 w-4 animate-spin" /> Processing Payment Gateway...
+                          </span>
+                        ) : (
+                          `Pay ${formatMoney(currentBooking.amount)} & Confirm Space ${stall.stallNumber}`
+                        )}
+                      </Button>
+                    </form>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cardNumber">Card Number</Label>
-                    <Input
-                      id="cardNumber"
-                      required
-                      placeholder="4532 •••• •••• 8910"
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="cardExpiry">Expiry Date (MM/YY)</Label>
-                      <Input
-                        id="cardExpiry"
-                        required
-                        placeholder="08/28"
-                        value={cardExpiry}
-                        onChange={(e) => setCardExpiry(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cardCvc">CVV / CVC</Label>
-                      <Input
-                        id="cardCvc"
-                        type="password"
-                        maxLength={4}
-                        required
-                        placeholder="842"
-                        value={cardCvc}
-                        onChange={(e) => setCardCvc(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full h-12 text-sm font-extrabold bg-primary text-primary-foreground hover:bg-primary/90 mt-4"
-                    disabled={processingCard}
-                  >
-                    {processingCard ? (
-                      <span className="flex items-center gap-2">
-                        <RefreshCw className="h-4 w-4 animate-spin" /> Processing Payment Gateway...
-                      </span>
-                    ) : (
-                      `Pay ${formatMoney(currentBooking.amount)} & Confirm Space ${stall.stallNumber}`
-                    )}
-                  </Button>
-                </form>
+                )}
               </div>
             )}
 
@@ -706,10 +830,10 @@ export function BookStallPage() {
                         />
                         <div>
                           <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
-                            <CreditCard className="h-4 w-4 text-primary" /> Credit / Debit Card
+                            <CreditCard className="h-4 w-4 text-primary" /> PayFast Gateway
                           </div>
                           <p className="mt-1 text-[11px] text-muted-foreground leading-snug">
-                            Instant online payment via simulated gateway checkout
+                            Instant online payment via PayFast Sandbox Gateway
                           </p>
                         </div>
                       </label>
@@ -769,7 +893,7 @@ export function BookStallPage() {
                     {submitting
                       ? "Reserving Space..."
                       : paymentMethod === "CARD"
-                        ? `Proceed to Card Payment (${stall.stallNumber})`
+                        ? `Proceed to PayFast Card Gateway (${stall.stallNumber})`
                         : `Reserve Space (${stall.stallNumber}) & View Bank Details`}
                   </Button>
                 </form>

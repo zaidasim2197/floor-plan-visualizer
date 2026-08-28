@@ -34,6 +34,12 @@ export const eventConfig = {
     adminUsername: "admin",
     adminPassword: "Admin@123",
   },
+  payfast: {
+    merchantId: "10053591",
+    merchantKey: "0mabghoryy7i6",
+    sandboxUrl: "https://sandbox.payfast.co.za/eng/process",
+    passphrase: "",
+  },
   floorPlanLabel: "Demo Exhibition Layout",
 } as const;
 
