@@ -39,7 +39,13 @@ function FloorPlanPage() {
   const navigate = useNavigate();
   const statusMap = useMemo(() => stallStatusMap(state.bookings), [state.bookings]);
   const stats = useMemo(() => metrics(state.bookings), [state.bookings]);
-  const [selected, setSelected] = useState<Stall | null>(stalls[0] ?? null);
+
+  const firstAvailableStall = useMemo(
+    () => stalls.find((s) => (statusMap[s.id] ?? "AVAILABLE") === "AVAILABLE") ?? null,
+    [statusMap],
+  );
+
+  const [selected, setSelected] = useState<Stall | null>(firstAvailableStall);
   const [zone, setZone] = useState<string>("All zones");
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState<boolean>(false);
 
@@ -52,6 +58,8 @@ function FloorPlanPage() {
   const selectedStatus = selected ? statusMap[selected.id] ?? "AVAILABLE" : null;
 
   const handleSelectStall = (stall: Stall) => {
+    const status = statusMap[stall.id] ?? "AVAILABLE";
+    if (status !== "AVAILABLE") return; // Only allow selection and modal popup for AVAILABLE stalls
     setSelected(stall);
     setMobileDrawerOpen(true);
   };
@@ -126,12 +134,17 @@ function FloorPlanPage() {
                   {list.map((s) => {
                     const status = statusMap[s.id] ?? "AVAILABLE";
                     const isSelected = selected?.id === s.id;
+                    const isAvailable = status === "AVAILABLE";
                     return (
                       <tr
                         key={s.id}
-                        onClick={() => handleSelectStall(s)}
-                        className={`cursor-pointer transition-colors ${
-                          isSelected ? "bg-primary/5 font-medium" : "hover:bg-secondary/60"
+                        onClick={() => isAvailable && handleSelectStall(s)}
+                        className={`transition-colors ${
+                          isAvailable
+                            ? isSelected
+                              ? "bg-primary/5 font-medium cursor-pointer"
+                              : "hover:bg-secondary/60 cursor-pointer"
+                            : "opacity-60 cursor-not-allowed bg-muted/20"
                         }`}
                       >
                         <td className="px-3 sm:px-4 py-3 font-extrabold text-foreground">{s.stallNumber}</td>

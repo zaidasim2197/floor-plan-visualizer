@@ -13,22 +13,24 @@ import { formatMoney } from "@/lib/booking-format";
 import {
   createBooking,
   submitPaymentEvidence,
+  confirmOnlineCardPayment,
   useBookingState,
   activeBookingForStall,
   sweepExpired,
 } from "@/lib/booking-store";
-import type { Booking } from "@/lib/booking-types";
 import {
   ArrowLeft,
   CheckCircle2,
   Clock,
   Send,
   ShieldCheck,
-  Building,
+  Building2,
   CreditCard,
   AlertCircle,
-  HelpCircle,
+  Lock,
+  Printer,
   Sparkles,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -36,7 +38,9 @@ export const Route = createFileRoute("/book/$stallId")({
   component: BookStallPage,
 });
 
-function BookStallPage() {
+type PaymentMethod = "CARD" | "BANK";
+
+export function BookStallPage() {
   const { stallId } = Route.useParams();
   const navigate = useNavigate();
   const state = useBookingState();
@@ -55,6 +59,14 @@ function BookStallPage() {
   const [productService, setProductService] = useState("");
   const [notes, setNotes] = useState("");
   const [terms, setTerms] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CARD");
+
+  // Simulated Card Payment State
+  const [cardName, setCardName] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvc, setCardCvc] = useState("");
+  const [processingCard, setProcessingCard] = useState(false);
 
   // Flow State
   const [activeRef, setActiveRef] = useState<string | null>(null);
@@ -63,12 +75,13 @@ function BookStallPage() {
   const [paymentRefInput, setPaymentRefInput] = useState("");
   const [submittingPayment, setSubmittingPayment] = useState(false);
 
-  // Live Hold Timer for Pending Booking
+  // Active booking calculation
   const currentBooking = useMemo(() => {
     if (activeRef) return state.bookings.find((b) => b.reference === activeRef);
     return activeBooking;
   }, [state.bookings, activeRef, activeBooking]);
 
+  // Live Hold Timer (30 minutes)
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
 
   useEffect(() => {
@@ -102,6 +115,7 @@ function BookStallPage() {
     );
   }
 
+  // Handle Form Submission -> Activates 30-min Hold
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -130,20 +144,56 @@ function BookStallPage() {
     }
 
     setActiveRef(result.data.reference);
+    setCardName(customerName);
     toast.success(`Temporary hold activated! Reference: ${result.data.reference}`);
   };
 
-  const handleSimulatePayment = (e: React.FormEvent) => {
+  // Quick fill demo test card
+  const handleFillDemoCard = () => {
+    setCardName(customerName || "Hammad Sheikh");
+    setCardNumber("4532 •••• •••• 8910");
+    setCardExpiry("08/28");
+    setCardCvc("842");
+    toast.info("Demo card details auto-filled for testing.");
+  };
+
+  // Handle Simulated Card Payment Submit
+  const handleSimulateCardSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentBooking) return;
+
+    if (!cardName.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvc.trim()) {
+      toast.error("Please enter complete card details.");
+      return;
+    }
+
+    setProcessingCard(true);
+
+    setTimeout(() => {
+      const cardTxnRef = `CARD-TXN-${Math.floor(100000 + Math.random() * 900000)}`;
+      const result = confirmOnlineCardPayment(currentBooking.reference, cardTxnRef);
+      setProcessingCard(false);
+
+      if (result.ok) {
+        toast.success("Payment Successful! Your stall booking is confirmed.");
+      } else {
+        toast.error(result.error);
+      }
+    }, 1500);
+  };
+
+  // Handle Bank Reference Submission
+  const handleSimulateBankSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentBooking) return;
     setSubmittingPayment(true);
 
-    const dummyRef = paymentRefInput.trim() || `TRX-${Math.floor(100000 + Math.random() * 900000)}`;
+    const dummyRef = paymentRefInput.trim() || `HBL-TRX-${Math.floor(100000 + Math.random() * 900000)}`;
     const res = submitPaymentEvidence(currentBooking.reference, dummyRef);
     setSubmittingPayment(false);
 
     if (res.ok) {
-      toast.success("Payment submitted for review!");
+      toast.success("Payment evidence submitted for review!");
     } else {
       toast.error(res.error);
     }
@@ -170,7 +220,7 @@ function BookStallPage() {
             <div>
               <p className="eyebrow text-primary">{stall.zone}</p>
               <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl text-foreground">
-                Exhibition Space Booking — {stall.stallNumber}
+                Exhibition Space Booking — Space {stall.stallNumber}
               </h1>
             </div>
             <div className="flex items-center gap-3">
@@ -181,14 +231,13 @@ function BookStallPage() {
         </div>
       </section>
 
-      {/* MAIN STEP WORKFLOW */}
-      <section className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6">
+      {/* MAIN WORKFLOW */}
+      <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
         {currentBooking ? (
-          /* STEP 2: PAYMENT & HOLD STATUS VIEW */
           <div className="mx-auto max-w-3xl space-y-8">
-            {/* STATUS BANNER */}
+            {/* STEP SUMMARY & HOLD BADGE */}
             <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4 border-b border-border pb-4">
+              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
                 <div>
                   <span className="text-xs font-bold text-muted-foreground uppercase">Booking Reference</span>
                   <p className="text-2xl font-extrabold tracking-tight text-foreground">{currentBooking.reference}</p>
@@ -196,156 +245,332 @@ function BookStallPage() {
                 <StatusBadge status={currentBooking.status} />
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+              <div className="mt-5 grid grid-cols-2 gap-4 text-xs sm:text-sm sm:grid-cols-4">
                 <div>
-                  <span className="text-xs text-muted-foreground">Space</span>
+                  <span className="text-muted-foreground text-[11px] block">Space</span>
                   <p className="font-bold text-foreground">{currentBooking.stallId}</p>
                 </div>
                 <div>
-                  <span className="text-xs text-muted-foreground">Company</span>
+                  <span className="text-muted-foreground text-[11px] block">Organization</span>
                   <p className="font-bold text-foreground truncate">{currentBooking.companyName}</p>
                 </div>
                 <div>
-                  <span className="text-xs text-muted-foreground">Amount</span>
+                  <span className="text-muted-foreground text-[11px] block">Total Amount</span>
                   <p className="font-bold text-foreground">{formatMoney(currentBooking.amount)}</p>
                 </div>
                 <div>
-                  <span className="text-xs text-muted-foreground">Payment Status</span>
-                  <p className="font-bold text-primary">{currentBooking.paymentStatus}</p>
+                  <span className="text-muted-foreground text-[11px] block">Payment Method</span>
+                  <p className="font-bold text-primary">
+                    {paymentMethod === "CARD" ? "Online Credit Card" : "Bank Transfer"}
+                  </p>
                 </div>
               </div>
 
-              {/* TIMER IF PENDING */}
+              {/* LIVE HOLD TIMER BANNER */}
               {currentBooking.status === "PAYMENT_PENDING" && (
-                <div className="mt-6 rounded-lg bg-amber-500/10 border border-amber-500/30 p-4 flex items-center justify-between">
+                <div className="mt-6 rounded-lg bg-amber-500/10 border border-amber-500/30 p-4 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <Clock className="h-6 w-6 text-amber-600 animate-pulse" />
+                    <Clock className="h-6 w-6 text-amber-600 animate-pulse shrink-0" />
                     <div>
-                      <p className="text-xs font-bold text-amber-900 dark:text-amber-300 uppercase">Temporary Hold Expiration</p>
-                      <p className="text-xs text-amber-800 dark:text-amber-400">Complete payment before timer expires to retain space.</p>
+                      <p className="text-xs font-bold text-amber-900 dark:text-amber-300 uppercase">
+                        30-Minute Temporary Hold Active
+                      </p>
+                      <p className="text-xs text-amber-800 dark:text-amber-400">
+                        Space {stall.stallNumber} is locked for your session. Complete payment before expiration.
+                      </p>
                     </div>
                   </div>
-                  <span className="text-2xl font-extrabold text-amber-900 dark:text-amber-200 tracking-mono">
+                  <span className="text-2xl font-extrabold text-amber-900 dark:text-amber-200 tracking-mono font-mono">
                     {formatTimer(secondsLeft)}
                   </span>
                 </div>
               )}
             </div>
 
-            {/* PAYMENT INSTRUCTIONS & ACTION */}
-            {currentBooking.status === "PAYMENT_PENDING" && (
+            {/* IF PAYMENT IS PENDING AND METHOD IS CARD */}
+            {currentBooking.status === "PAYMENT_PENDING" && paymentMethod === "CARD" && (
               <div className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-6">
                 <div>
-                  <h3 className="text-lg font-bold text-foreground">Payment Instructions</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Please transfer the total booking fee of <strong>{formatMoney(currentBooking.amount)}</strong> to the official event account below.
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                    <h2 className="text-lg font-bold text-foreground">Online Credit / Debit Card Checkout</h2>
+                  </div>
+                  <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+                    Enter your card details below to complete your payment and confirm your space instantly.
                   </p>
                 </div>
 
-                <div className="rounded-lg bg-secondary p-4 space-y-2 text-sm font-mono border border-border">
-                  <div className="flex justify-between">
+                {/* SIMULATION WARNING BANNER */}
+                <div className="rounded-lg bg-blue-500/10 border border-blue-500/30 p-4 text-xs text-blue-900 dark:text-blue-200 leading-relaxed flex items-start gap-3">
+                  <Lock className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-blue-950 dark:text-blue-100 uppercase tracking-wide">
+                      PROPOSAL DEMO SIMULATION NOTICE
+                    </p>
+                    This is an interactive technical prototype demonstration. No real credit card will be charged. Payment gateway integration is simulated for client approval.
+                  </div>
+                </div>
+
+                <form onSubmit={handleSimulateCardSubmit} className="space-y-4 pt-2">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="cardName">Cardholder Name</Label>
+                      <button
+                        type="button"
+                        onClick={handleFillDemoCard}
+                        className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
+                      >
+                        <Sparkles className="h-3 w-3" /> Auto-Fill Demo Card
+                      </button>
+                    </div>
+                    <Input
+                      id="cardName"
+                      required
+                      placeholder="e.g. Hammad Sheikh"
+                      value={cardName}
+                      onChange={(e) => setCardName(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="cardNumber">Card Number</Label>
+                    <Input
+                      id="cardNumber"
+                      required
+                      placeholder="4532 •••• •••• 8910"
+                      value={cardNumber}
+                      onChange={(e) => setCardNumber(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cardExpiry">Expiry Date (MM/YY)</Label>
+                      <Input
+                        id="cardExpiry"
+                        required
+                        placeholder="08/28"
+                        value={cardExpiry}
+                        onChange={(e) => setCardExpiry(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cardCvc">CVV / CVC</Label>
+                      <Input
+                        id="cardCvc"
+                        type="password"
+                        maxLength={4}
+                        required
+                        placeholder="842"
+                        value={cardCvc}
+                        onChange={(e) => setCardCvc(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full h-12 text-sm font-extrabold bg-primary text-primary-foreground hover:bg-primary/90 mt-4"
+                    disabled={processingCard}
+                  >
+                    {processingCard ? (
+                      <span className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4 animate-spin" /> Processing Payment Gateway...
+                      </span>
+                    ) : (
+                      `Pay ${formatMoney(currentBooking.amount)} & Confirm Space ${stall.stallNumber}`
+                    )}
+                  </Button>
+                </form>
+              </div>
+            )}
+
+            {/* IF PAYMENT IS PENDING AND METHOD IS BANK */}
+            {currentBooking.status === "PAYMENT_PENDING" && paymentMethod === "BANK" && (
+              <div className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-6">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-primary" />
+                    <h2 className="text-lg font-bold text-foreground">Direct Bank Deposit / Transfer Instructions</h2>
+                  </div>
+                  <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+                    Transfer <strong>{formatMoney(currentBooking.amount)}</strong> to our official bank account within 30 minutes to confirm your space.
+                  </p>
+                </div>
+
+                {/* BANK ACCOUNT DETAILS CARD */}
+                <div className="rounded-lg bg-secondary p-4 space-y-2.5 text-xs sm:text-sm font-mono border border-border">
+                  <div className="flex justify-between border-b border-border/50 pb-1.5">
                     <span className="text-muted-foreground">Bank Name:</span>
                     <span className="font-bold text-foreground">Habib Bank Limited (HBL)</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between border-b border-border/50 pb-1.5">
                     <span className="text-muted-foreground">Account Title:</span>
                     <span className="font-bold text-foreground">Marriott Trade & Exhibitions Ltd</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">IBAN / Account #:</span>
+                  <div className="flex justify-between border-b border-border/50 pb-1.5">
+                    <span className="text-muted-foreground">IBAN Number:</span>
                     <span className="font-bold text-foreground">PK36 HABB 0001 2345 6789 0102</span>
                   </div>
+                  <div className="flex justify-between border-b border-border/50 pb-1.5">
+                    <span className="text-muted-foreground">Branch / SWIFT:</span>
+                    <span className="font-bold text-foreground">HABBPKKA</span>
+                  </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Reference Code:</span>
+                    <span className="text-muted-foreground">Booking Reference:</span>
                     <span className="font-bold text-primary">{currentBooking.reference}</span>
                   </div>
                 </div>
 
-                {/* WHATSAPP SUBMISSION */}
+                {/* WHATSAPP RECEIPT SUBMISSION */}
                 <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-5 space-y-3">
                   <div className="flex items-center gap-2">
                     <Send className="h-5 w-5 text-emerald-600" />
-                    <h4 className="text-sm font-bold text-foreground">Option 1: Send Receipt via WhatsApp</h4>
+                    <h4 className="text-sm font-bold text-foreground">Send Receipt Screenshot via WhatsApp</h4>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Take a screenshot of your bank transfer receipt and send it directly to our administration team on WhatsApp for fast verification.
+                    After making the bank transfer, send your receipt screenshot directly to our organizing team on WhatsApp for fast verification.
                   </p>
-                  <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold">
+                  <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold h-11">
                     <a
                       href={whatsappLink(
                         eventConfig.contact.whatsapp[0],
-                        `Payment Receipt Submission:\nBooking ID: ${currentBooking.reference}\nSpace: ${currentBooking.stallId}\nCompany: ${currentBooking.companyName}\nAmount: PKR ${currentBooking.amount.toLocaleString()}`,
+                        `Bank Transfer Receipt:\nBooking ID: ${currentBooking.reference}\nSpace: ${currentBooking.stallId}\nCompany: ${currentBooking.companyName}\nAmount: PKR ${currentBooking.amount.toLocaleString()}`,
                       )}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      <Send className="mr-2 h-4 w-4" /> Send Receipt via WhatsApp
+                      <Send className="mr-2 h-4 w-4" /> Send Receipt on WhatsApp
                     </a>
                   </Button>
                 </div>
 
-                {/* TEST SIMULATION FORM */}
+                {/* MANUAL TRANSACTION REFERENCE FORM */}
                 <div className="rounded-lg border border-border p-5 space-y-3 bg-background">
-                  <h4 className="text-sm font-bold text-foreground">Option 2: Simulate Payment (Demo Action)</h4>
+                  <h4 className="text-sm font-bold text-foreground">Submit Bank Reference Number</h4>
                   <p className="text-xs text-muted-foreground">
-                    Submit payment evidence directly inside the application to move status to <strong>PAYMENT_REVIEW</strong>.
+                    Or enter your bank transfer transaction reference number below to place your booking under <strong>PAYMENT_REVIEW</strong>.
                   </p>
-                  <form onSubmit={handleSimulatePayment} className="flex gap-2">
+                  <form onSubmit={handleSimulateBankSubmit} className="flex gap-2">
                     <Input
-                      placeholder="Transaction Reference (e.g. TRX-992140)"
+                      placeholder="e.g. HBL-TRX-891042"
                       value={paymentRefInput}
                       onChange={(e) => setPaymentRefInput(e.target.value)}
                     />
                     <Button type="submit" className="font-bold shrink-0" disabled={submittingPayment}>
-                      Simulate Payment
+                      Submit Reference
                     </Button>
                   </form>
                 </div>
               </div>
             )}
 
-            {/* PAYMENT REVIEW / CONFIRMED MESSAGES */}
+            {/* PAYMENT UNDER REVIEW VIEW */}
             {currentBooking.status === "PAYMENT_REVIEW" && (
-              <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-6 text-center space-y-3">
-                <CheckCircle2 className="mx-auto h-12 w-12 text-blue-600" />
-                <h3 className="text-lg font-bold text-foreground">Payment Received & Under Review</h3>
+              <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-8 text-center space-y-4">
+                <CheckCircle2 className="mx-auto h-14 w-14 text-blue-600" />
+                <h2 className="text-xl font-bold text-foreground">Payment Received & Under Review</h2>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  Thank you! Your payment reference <strong>{currentBooking.paymentReference}</strong> has been received. Your temporary hold is protected while our administration team verifies the transfer.
+                  Thank you! Your payment reference <strong>{currentBooking.paymentReference}</strong> has been submitted. Your temporary hold is protected while our management team verifies the transfer.
                 </p>
-                <div className="pt-4 flex justify-center gap-3">
-                  <Button asChild variant="outline" size="sm">
+                <div className="pt-4 flex flex-wrap justify-center gap-3">
+                  <Button asChild variant="outline">
                     <Link to="/floor-plan">Return to Floor Plan</Link>
                   </Button>
-                  <Button asChild size="sm">
+                  <Button asChild>
                     <Link to="/admin">Open Admin Panel to Approve</Link>
                   </Button>
                 </div>
               </div>
             )}
 
+            {/* PAYMENT SUCCESSFUL & CONFIRMED VIEW */}
             {currentBooking.status === "CONFIRMED" && (
-              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-6 text-center space-y-3">
-                <ShieldCheck className="mx-auto h-12 w-12 text-emerald-600" />
-                <h3 className="text-lg font-bold text-foreground">Booking Permanently Confirmed!</h3>
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-8 text-center space-y-5">
+                <ShieldCheck className="mx-auto h-16 w-16 text-emerald-600 animate-bounce" />
+                <div>
+                  <span className="inline-block rounded-full bg-emerald-600/10 px-3 py-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+                    Official Confirmation
+                  </span>
+                  <h2 className="mt-2 text-2xl font-extrabold text-foreground sm:text-3xl">
+                    Payment Successful & Space Confirmed!
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground max-w-lg mx-auto">
+                    Congratulations! Exhibition Space <strong>{currentBooking.stallId}</strong> is officially booked for <strong>{currentBooking.companyName}</strong> at {eventConfig.name}.
+                  </p>
+                </div>
+
+                {/* DIGITAL EXHIBITOR PASS / RECEIPT CARD */}
+                <div className="rounded-lg border border-border bg-card p-5 text-left max-w-md mx-auto space-y-3 text-xs sm:text-sm">
+                  <div className="flex justify-between border-b border-border pb-2">
+                    <span className="text-muted-foreground">Booking ID</span>
+                    <span className="font-mono font-bold text-primary">{currentBooking.reference}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-border pb-2">
+                    <span className="text-muted-foreground">Exhibitor</span>
+                    <span className="font-bold text-foreground">{currentBooking.customerName}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-border pb-2">
+                    <span className="text-muted-foreground">Organization</span>
+                    <span className="font-bold text-foreground">{currentBooking.companyName}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-border pb-2">
+                    <span className="text-muted-foreground">Space Assigned</span>
+                    <span className="font-bold text-foreground">Space {currentBooking.stallId}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-border pb-2">
+                    <span className="text-muted-foreground">Event Date</span>
+                    <span className="font-bold text-foreground">{eventConfig.dateLabel}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-border pb-2">
+                    <span className="text-muted-foreground">Venue</span>
+                    <span className="font-bold text-foreground">{eventConfig.venue.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Payment Reference</span>
+                    <span className="font-mono font-bold text-foreground">{currentBooking.paymentReference || "ONLINE-CARD"}</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex flex-wrap justify-center gap-3">
+                  <Button
+                    onClick={() => window.print()}
+                    variant="outline"
+                    className="font-bold border-border"
+                  >
+                    <Printer className="mr-2 h-4 w-4" /> Print / Download Confirmed Pass
+                  </Button>
+                  <Button asChild className="font-bold bg-primary text-primary-foreground">
+                    <Link to="/floor-plan">View Confirmed Space on Live Map</Link>
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* EXPIRED VIEW */}
+            {currentBooking.status === "EXPIRED" && (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-8 text-center space-y-4">
+                <AlertCircle className="mx-auto h-14 w-14 text-destructive" />
+                <h2 className="text-xl font-bold text-foreground">Reservation Expired</h2>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  Your exhibition space <strong>{currentBooking.stallId}</strong> is fully confirmed. An official confirmation email has been logged to your address <strong>{currentBooking.email}</strong>.
+                  Your 30-minute temporary hold for space <strong>{currentBooking.stallId}</strong> has expired. The space has been released back to the floor plan for other exhibitors.
                 </p>
                 <div className="pt-4">
-                  <Button asChild size="sm">
-                    <Link to="/floor-plan">View Confirmed Space on Map</Link>
+                  <Button asChild className="font-bold">
+                    <Link to="/floor-plan">Re-select Available Space</Link>
                   </Button>
                 </div>
               </div>
             )}
           </div>
         ) : (
-          /* STEP 1: FORM FILLING VIEW */
-          <div className="grid gap-12 lg:grid-cols-12">
-            {/* LEFT DETAILS */}
+          /* STEP 1: EXHIBITOR FORM & PAYMENT SELECTION */
+          <div className="grid gap-10 lg:grid-cols-12">
+            {/* LEFT SUMMARY */}
             <div className="lg:col-span-5 space-y-6">
               <div className="rounded-xl border border-border bg-card p-6 shadow-xs">
-                <h2 className="text-lg font-bold text-foreground border-b border-border pb-3">
-                  Selected Space Summary
+                <h2 className="text-base font-bold text-foreground border-b border-border pb-3">
+                  Space Selection Summary
                 </h2>
 
                 <dl className="mt-4 space-y-3 text-sm">
@@ -362,11 +587,11 @@ function BookStallPage() {
                     <dd className="font-semibold text-foreground">{stall.size}</dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Zone</dt>
+                    <dt className="text-muted-foreground">Zone Location</dt>
                     <dd className="font-semibold text-foreground">{stall.zone}</dd>
                   </div>
                   <div className="flex justify-between border-t border-border pt-3">
-                    <dt className="font-bold text-foreground">Total Rental Fee</dt>
+                    <dt className="font-bold text-foreground">Total Fee</dt>
                     <dd className="text-xl font-extrabold text-primary">{formatMoney(stall.price)}</dd>
                   </div>
                 </dl>
@@ -374,24 +599,24 @@ function BookStallPage() {
 
               <div className="rounded-xl border border-border bg-card p-6 shadow-xs space-y-3">
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-emerald-600" /> Hold Protection Notice
+                  <ShieldCheck className="h-4 w-4 text-emerald-600" /> Hold Protection Guarantee
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Submitting this form immediately reserves space <strong>{stall.stallNumber}</strong> for {eventConfig.booking.paymentPendingMinutes} minutes. No other user can book this space while your hold is active.
+                  Submitting this form immediately reserves space <strong>{stall.stallNumber}</strong> for {eventConfig.booking.paymentPendingMinutes} minutes. Concurrent users are strictly blocked from double booking.
                 </p>
               </div>
             </div>
 
             {/* RIGHT FORM */}
             <div className="lg:col-span-7">
-              <div className="rounded-xl border border-border bg-card p-8 shadow-xs">
-                <h2 className="text-2xl font-extrabold text-foreground">Complete Exhibitor Booking Form</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Provide your organization details to initialize your temporary reservation.
+              <div className="rounded-xl border border-border bg-card p-6 sm:p-8 shadow-xs">
+                <h2 className="text-xl sm:text-2xl font-extrabold text-foreground">Exhibitor Registration & Booking</h2>
+                <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+                  Provide your organization contact details and select your preferred payment method.
                 </p>
 
                 {error && (
-                  <div className="mt-6 rounded-md bg-destructive/10 border border-destructive/30 p-3 text-xs font-semibold text-destructive flex items-center gap-2">
+                  <div className="mt-5 rounded-md bg-destructive/10 border border-destructive/30 p-3 text-xs font-semibold text-destructive flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     <span>{error}</span>
                   </div>
@@ -458,12 +683,72 @@ function BookStallPage() {
                     />
                   </div>
 
+                  {/* PAYMENT METHOD SELECTION TOGGLE */}
+                  <div className="space-y-3 pt-2">
+                    <Label className="text-sm font-bold text-foreground">Select Payment Method *</Label>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {/* OPTION 1: CARD */}
+                      <label
+                        onClick={() => setPaymentMethod("CARD")}
+                        className={
+                          "flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-all " +
+                          (paymentMethod === "CARD"
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                            : "border-border bg-background hover:bg-secondary/50")
+                        }
+                      >
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          checked={paymentMethod === "CARD"}
+                          onChange={() => setPaymentMethod("CARD")}
+                          className="mt-0.5 accent-primary"
+                        />
+                        <div>
+                          <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
+                            <CreditCard className="h-4 w-4 text-primary" /> Credit / Debit Card
+                          </div>
+                          <p className="mt-1 text-[11px] text-muted-foreground leading-snug">
+                            Instant online payment via simulated gateway checkout
+                          </p>
+                        </div>
+                      </label>
+
+                      {/* OPTION 2: BANK */}
+                      <label
+                        onClick={() => setPaymentMethod("BANK")}
+                        className={
+                          "flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-all " +
+                          (paymentMethod === "BANK"
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                            : "border-border bg-background hover:bg-secondary/50")
+                        }
+                      >
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          checked={paymentMethod === "BANK"}
+                          onChange={() => setPaymentMethod("BANK")}
+                          className="mt-0.5 accent-primary"
+                        />
+                        <div>
+                          <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
+                            <Building2 className="h-4 w-4 text-primary" /> Direct Bank Transfer
+                          </div>
+                          <p className="mt-1 text-[11px] text-muted-foreground leading-snug">
+                            30-min hold + IBAN details & WhatsApp receipt submission
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="notes">Special Requirements / Notes</Label>
                     <Textarea
                       id="notes"
-                      rows={3}
-                      placeholder="e.g. Power outlet requirements, extra table request..."
+                      rows={2}
+                      placeholder="e.g. Extra power outlet, customized fascia board text..."
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                     />
@@ -475,13 +760,17 @@ function BookStallPage() {
                       checked={terms}
                       onCheckedChange={(checked) => setTerms(Boolean(checked))}
                     />
-                    <Label htmlFor="terms" className="text-xs leading-normal text-muted-foreground">
-                      I agree to the Exhibition Terms & Conditions and understand that space hold is valid for {eventConfig.booking.paymentPendingMinutes} minutes pending payment confirmation.
+                    <Label htmlFor="terms" className="text-xs leading-normal text-muted-foreground cursor-pointer">
+                      I agree to the Exhibition Terms & Conditions and understand that space hold is valid for {eventConfig.booking.paymentPendingMinutes} minutes.
                     </Label>
                   </div>
 
-                  <Button type="submit" className="w-full h-11 font-bold text-sm" disabled={submitting}>
-                    {submitting ? "Reserving Space..." : `Submit Request & Reserve Space (${stall.stallNumber})`}
+                  <Button type="submit" className="w-full h-11 font-extrabold text-sm" disabled={submitting}>
+                    {submitting
+                      ? "Reserving Space..."
+                      : paymentMethod === "CARD"
+                        ? `Proceed to Card Payment (${stall.stallNumber})`
+                        : `Reserve Space (${stall.stallNumber}) & View Bank Details`}
                   </Button>
                 </form>
               </div>

@@ -8,10 +8,10 @@ export const eventConfig = {
   tagline: "Where industry leaders, innovators and buyers meet.",
   description:
     "A two-day curated exhibition bringing together manufacturers, technology providers, distributors and enterprise buyers under one roof.",
-  edition: "",
-  startDate: "2027-01-28T09:00:00+05:00",
-  endDate: "2027-01-29T18:00:00+05:00",
-  dateLabel: "28 – 29 January 2027",
+  edition: "2026 Edition",
+  startDate: "2026-11-18T09:00:00+05:00",
+  endDate: "2026-11-19T18:00:00+05:00",
+  dateLabel: "18 – 19 November 2026",
   timeLabel: "09:00 – 18:00 PKT",
   venue: {
     name: "Marriott Hotel, Grand Ballroom",

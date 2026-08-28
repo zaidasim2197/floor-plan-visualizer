@@ -25,9 +25,9 @@ export const formatCountdown = (ms: number) => {
 export const statusTone: Record<StallStatus, string> = {
   AVAILABLE: "border-border bg-surface-2 text-muted-foreground",
   PAYMENT_PENDING: "border-warning/35 bg-warning/15 text-warning-foreground",
-  PAYMENT_REVIEW: "border-info/35 bg-info/12 text-info",
+  PAYMENT_REVIEW: "border-warning/35 bg-warning/15 text-warning-foreground",
   CONFIRMED: "border-success/35 bg-success/12 text-success",
   EXPIRED: "border-border bg-muted text-muted-foreground",
   CANCELLED: "border-border bg-muted text-muted-foreground",
-  CONFLICT: "border-destructive/40 bg-destructive/10 text-destructive",
+  CONFLICT: "border-warning/35 bg-warning/15 text-warning-foreground",
 };

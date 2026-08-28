@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { StatusBadge } from "@/components/site/StatusBadge";
@@ -196,6 +196,15 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const state = useBookingState();
   const stats = useMemo(() => metrics(state.bookings), [state.bookings]);
   const statusMap = useMemo(() => stallStatusMap(state.bookings), [state.bookings]);
+
+  // Real-time heartbeat tick for admin dashboard
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const [activeTab, setActiveTab] = useState<"bookings" | "map" | "emails" | "audit">("bookings");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -631,7 +640,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         {activeTab === "map" && (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
             <div>
-              <FloorMap statusMap={statusMap} selectedId={selectedBooking?.stallId ?? null} onSelect={(s) => {
+              <FloorMap isAdminView={true} statusMap={statusMap} selectedId={selectedBooking?.stallId ?? null} onSelect={(s) => {
                 const found = state.bookings.find((b) => b.stallId === s.id && (b.status === "CONFIRMED" || b.status === "PAYMENT_PENDING" || b.status === "PAYMENT_REVIEW"));
                 if (found) setSelectedBooking(found);
                 else {

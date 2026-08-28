@@ -118,6 +118,47 @@ function seed(): StoreState {
 let state: StoreState = { bookings: [], audit: [], notifications: [], seq: 0 };
 let hydrated = false;
 const listeners = new Set<() => void>();
+const SYNC_CHANNEL = "marriott_expo_realtime_sync";
+let broadcastChannel: BroadcastChannel | null = null;
+
+function reloadFromStorage() {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      state = JSON.parse(raw) as StoreState;
+      sweepExpired();
+      cachedSnapshot = { ...state };
+      listeners.forEach((l) => l());
+    }
+  } catch {
+    /* ignore storage read error */
+  }
+}
+
+if (typeof window !== "undefined") {
+  try {
+    if ("BroadcastChannel" in window) {
+      broadcastChannel = new BroadcastChannel(SYNC_CHANNEL);
+      broadcastChannel.onmessage = () => {
+        reloadFromStorage();
+      };
+    }
+
+    window.addEventListener("storage", (e) => {
+      if (e.key === STORAGE_KEY) {
+        reloadFromStorage();
+      }
+    });
+
+    // Background 1-second auto-sweep & real-time sync interval
+    setInterval(() => {
+      reloadFromStorage();
+    }, 1000);
+  } catch {
+    /* ignore fallback */
+  }
+}
 
 function load() {
   if (hydrated || typeof window === "undefined") return;
@@ -148,6 +189,11 @@ function emit() {
   persist();
   cachedSnapshot = { ...state };
   listeners.forEach((l) => l());
+  try {
+    broadcastChannel?.postMessage("sync");
+  } catch {
+    /* ignore broadcast error */
+  }
 }
 
 function subscribe(listener: () => void) {
@@ -351,6 +397,50 @@ export function submitPaymentEvidence(reference: string, paymentReference: strin
   }
 
   return { ok: false, error: "Payment cannot be submitted for this booking in its current state." };
+}
+
+export function confirmOnlineCardPayment(reference: string, cardTxnRef: string): Result<Booking> {
+  load();
+  sweepExpired();
+  const b = state.bookings.find((x) => x.reference === reference);
+  if (!b) return { ok: false, error: "Booking not found." };
+  if (b.status === "CONFIRMED") return { ok: true, data: b };
+
+  const holder = activeBookingForStall(state.bookings, b.stallId);
+  if (holder && holder.reference !== b.reference) {
+    return {
+      ok: false,
+      error: `Space ${b.stallId} is no longer held by your session. Please select another available space.`,
+    };
+  }
+
+  b.status = "CONFIRMED";
+  b.paymentStatus = "VERIFIED";
+  b.paymentReference = cardTxnRef;
+  b.paymentSubmittedAt = now();
+  b.confirmedAt = now();
+  log(
+    "CARD_PAYMENT_SUCCESSFUL",
+    "customer",
+    `Online card payment ${cardTxnRef} processed. Space ${b.stallId} confirmed for ${b.companyName}.`,
+    b.reference,
+  );
+  notify(
+    "ADMIN",
+    eventConfig.contact.email,
+    `Online Payment Confirmed — ${b.reference}`,
+    `Online credit card payment (${cardTxnRef}) processed for ${b.companyName} on space ${b.stallId}. Amount: PKR ${b.amount.toLocaleString()}. Space is confirmed.`,
+    b.reference,
+  );
+  notify(
+    "CUSTOMER",
+    b.email,
+    `Payment Successful & Space Confirmed — ${b.stallId}`,
+    `Your online payment has been processed successfully. Your space ${b.stallId} is permanently confirmed for ${eventConfig.name}.\nTransaction Ref: ${cardTxnRef}\nBooking ID: ${b.reference}.`,
+    b.reference,
+  );
+  emit();
+  return { ok: true, data: b };
 }
 
 export function approveBooking(reference: string): Result<Booking> {

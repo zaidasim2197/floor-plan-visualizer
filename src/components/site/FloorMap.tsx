@@ -9,7 +9,17 @@ import { cn } from "@/lib/utils";
 const MIN_ZOOM = 0.6;
 const MAX_ZOOM = 4;
 
-const stallFill: Record<StallStatus, string> = {
+const stallFillPublic: Record<StallStatus, string> = {
+  AVAILABLE: "var(--map-available)",
+  PAYMENT_PENDING: "var(--map-pending)",
+  PAYMENT_REVIEW: "var(--map-pending)",
+  CONFIRMED: "var(--map-confirmed)",
+  EXPIRED: "var(--map-available)",
+  CANCELLED: "var(--map-available)",
+  CONFLICT: "var(--map-pending)",
+};
+
+const stallFillAdmin: Record<StallStatus, string> = {
   AVAILABLE: "var(--map-available)",
   PAYMENT_PENDING: "var(--map-pending)",
   PAYMENT_REVIEW: "var(--map-review)",
@@ -64,9 +74,10 @@ interface FloorMapProps {
   selectedId?: string | null;
   onSelect?: (stall: Stall) => void;
   className?: string;
+  isAdminView?: boolean;
 }
 
-export function FloorMap({ statusMap, selectedId, onSelect, className }: FloorMapProps) {
+export function FloorMap({ statusMap, selectedId, onSelect, className, isAdminView }: FloorMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -240,7 +251,7 @@ export function FloorMap({ statusMap, selectedId, onSelect, className }: FloorMa
                     width={s.w}
                     height={s.h}
                     rx={3}
-                    fill={selected ? "var(--map-selected)" : stallFill[status]}
+                    fill={selected ? "var(--map-selected)" : (isAdminView ? stallFillAdmin[status] : stallFillPublic[status])}
                     stroke={selected ? "var(--map-selected)" : "var(--map-available-border)"}
                     strokeWidth={selected ? 3 : 1.25}
                     opacity={available || selected ? 1 : 0.92}
