@@ -28,16 +28,15 @@ export function DemoBanner() {
       <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 sm:px-2">
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
-            <ShieldCheck className="h-3 w-3" />
-            Demo Simulation Mode
+            Demo UI
           </span>
-          <span className="hidden sm:inline">
+          {/* <span className="hidden sm:inline">
             Real-time floor map & state engine active. Active holds: <strong>{activeHolds}</strong>
-          </span>
+          </span> */}
         </div>
 
         <div className="flex items-center gap-3">
-          <button
+          {/* <button
             type="button"
             onClick={handleSweep}
             className="inline-flex items-center gap-1 hover:underline focus:outline-none"
@@ -55,8 +54,8 @@ export function DemoBanner() {
           >
             <RotateCcw className="h-3 w-3" />
             Reset Seed Data
-          </button>
-          <span className="opacity-30">•</span>
+          </button> */}
+          {/* <span className="opacity-30">•</span> */}
           <Link
             to="/admin"
             className="inline-flex items-center gap-1 font-bold text-primary hover:underline focus:outline-none"

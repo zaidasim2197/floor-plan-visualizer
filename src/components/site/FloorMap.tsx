@@ -96,7 +96,7 @@ export function FloorMap({ statusMap, selectedId, onSelect, className, isAdminVi
     setOffset({ x: px - (px - o.x) * k, y: py - (py - o.y) * k });
   }, []);
 
-  const wheelRef = useRef<(e: WheelEvent) => void>(() => {});
+  const wheelRef = useRef<(e: WheelEvent) => void>(() => { });
   wheelRef.current = (e: WheelEvent) => {
     const el = containerRef.current;
     if (!el) return;
