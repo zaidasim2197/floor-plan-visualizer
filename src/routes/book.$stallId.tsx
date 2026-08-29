@@ -33,6 +33,11 @@ import {
   RefreshCw,
   ExternalLink,
   Shield,
+  UploadCloud,
+  Image as ImageIcon,
+  FileCheck,
+  X,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -86,6 +91,35 @@ export function BookStallPage() {
   const [error, setError] = useState<string | null>(null);
   const [paymentRefInput, setPaymentRefInput] = useState("");
   const [submittingPayment, setSubmittingPayment] = useState(false);
+
+  // Payment Proof Image Upload State
+  const [proofImageBase64, setProofImageBase64] = useState<string | null>(null);
+  const [proofFileName, setProofFileName] = useState<string | null>(null);
+  const [proofFileSize, setProofFileSize] = useState<string | null>(null);
+
+  const handleProofImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("File size is too large. Please select an image under 8MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProofImageBase64(reader.result as string);
+      setProofFileName(file.name);
+      setProofFileSize(`${(file.size / 1024).toFixed(1)} KB`);
+      toast.success("Payment receipt image attached!");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveProofImage = () => {
+    setProofImageBase64(null);
+    setProofFileName(null);
+    setProofFileSize(null);
+    toast.info("Attached receipt image removed.");
+  };
 
   // Active booking calculation
   const currentBooking = useMemo(() => {
@@ -312,21 +346,29 @@ export function BookStallPage() {
     }, 1500);
   };
 
-  // Handle Bank Reference Submission
+  // Handle Bank Reference & Receipt Image Submission
   const handleSimulateBankSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentBooking) return;
+
+    if (!paymentRefInput.trim() && !proofImageBase64) {
+      toast.error("Please upload a payment receipt image or enter your transaction reference number.");
+      return;
+    }
+
     setSubmittingPayment(true);
 
-    const dummyRef = paymentRefInput.trim() || `HBL-TRX-${Math.floor(100000 + Math.random() * 900000)}`;
-    const res = submitPaymentEvidence(currentBooking.reference, dummyRef);
-    setSubmittingPayment(false);
+    setTimeout(() => {
+      const dummyRef = paymentRefInput.trim() || `TRX-PROOF-${Math.floor(100000 + Math.random() * 900000)}`;
+      const res = submitPaymentEvidence(currentBooking.reference, dummyRef, proofImageBase64 || undefined);
+      setSubmittingPayment(false);
 
-    if (res.ok) {
-      toast.success("Payment evidence submitted for review!");
-    } else {
-      toast.error(res.error);
-    }
+      if (res.ok) {
+        toast.success("Payment Proof Submitted! Admin has been notified for verification.");
+      } else {
+        toast.error(res.error);
+      }
+    }, 800);
   };
 
   const formatTimer = (secs: number) => {
@@ -709,20 +751,94 @@ export function BookStallPage() {
                   </Button>
                 </div>
 
-                {/* MANUAL TRANSACTION REFERENCE FORM */}
-                <div className="rounded-lg border border-border p-5 space-y-3 bg-background">
-                  <h4 className="text-sm font-bold text-foreground">Submit Bank Reference Number</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Or enter your bank transfer transaction reference number below to place your booking under <strong>PAYMENT_REVIEW</strong>.
-                  </p>
-                  <form onSubmit={handleSimulateBankSubmit} className="flex gap-2">
-                    <Input
-                      placeholder="e.g. HBL-TRX-891042"
-                      value={paymentRefInput}
-                      onChange={(e) => setPaymentRefInput(e.target.value)}
-                    />
-                    <Button type="submit" className="font-bold shrink-0" disabled={submittingPayment}>
-                      Submit Reference
+                {/* UPLOAD PAYMENT PROOF & SUBMIT EVIDENCE FORM */}
+                <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <UploadCloud className="h-5 w-5 text-primary shrink-0" />
+                    <div>
+                      <h4 className="text-sm font-bold text-foreground">Upload Payment Proof Receipt / Deposit Slip</h4>
+                      <p className="text-xs text-muted-foreground">
+                        If you prefer not to use WhatsApp, upload your bank transfer deposit receipt or screenshot directly below.
+                      </p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleSimulateBankSubmit} className="space-y-4 pt-1">
+                    {/* FILE UPLOAD DROPZONE */}
+                    <div className="relative rounded-lg border-2 border-dashed border-border hover:border-primary bg-background/80 p-5 text-center transition-all cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProofImageChange}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      />
+
+                      {proofImageBase64 ? (
+                        <div className="space-y-3">
+                          <div className="relative mx-auto max-w-xs rounded-lg overflow-hidden border border-border shadow-md bg-card p-2">
+                            <img
+                              src={proofImageBase64}
+                              alt="Payment Proof Receipt Preview"
+                              className="max-h-40 mx-auto object-contain rounded"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleRemoveProofImage}
+                              className="absolute top-3 right-3 rounded-full bg-red-600 text-white p-1 shadow hover:bg-red-700 z-20"
+                              title="Remove image"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                          <div className="text-xs font-mono text-foreground flex items-center justify-center gap-2">
+                            <FileCheck className="h-4 w-4 text-emerald-600" />
+                            <span className="font-bold">{proofFileName}</span>
+                            <span className="text-muted-foreground">({proofFileSize})</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <ImageIcon className="h-5 w-5" />
+                          </div>
+                          <p className="text-xs font-bold text-foreground">
+                            Click or drag payment screenshot / bank deposit slip image here
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            Supports PNG, JPG, JPEG, WEBP (Max size: 8MB)
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* OPTIONAL TRANSACTION REF INPUT */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="paymentRefInput" className="text-xs font-bold">
+                        Transaction Reference / Serial Number (Optional)
+                      </Label>
+                      <Input
+                        id="paymentRefInput"
+                        placeholder="e.g. HBL-TRX-891042 or slip serial number"
+                        value={paymentRefInput}
+                        onChange={(e) => setPaymentRefInput(e.target.value)}
+                        className="h-10 text-xs"
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full font-extrabold h-11 text-sm bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+                      disabled={submittingPayment}
+                    >
+                      {submittingPayment ? (
+                        <span className="flex items-center gap-2">
+                          <RefreshCw className="h-4 w-4 animate-spin" /> Submitting Payment Proof...
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center gap-2">
+                          <UploadCloud className="h-4 w-4" /> Submit Payment Proof & Notify Admin
+                        </span>
+                      )}
                     </Button>
                   </form>
                 </div>
@@ -733,16 +849,32 @@ export function BookStallPage() {
             {currentBooking.status === "PAYMENT_REVIEW" && (
               <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-8 text-center space-y-4">
                 <CheckCircle2 className="mx-auto h-14 w-14 text-blue-600" />
-                <h2 className="text-xl font-bold text-foreground">Payment Received & Under Review</h2>
+                <h2 className="text-xl font-bold text-foreground">Payment Proof Submitted & Under Review</h2>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  Thank you! Your payment reference <strong>{currentBooking.paymentReference}</strong> has been submitted. Your temporary hold is protected while our management team verifies the transfer.
+                  Thank you! Your payment proof and reference (<strong>{currentBooking.paymentReference}</strong>) have been submitted. Your space hold is protected while Marriott Expo organizers verify the payment.
                 </p>
+
+                {currentBooking.paymentProofImage && (
+                  <div className="max-w-sm mx-auto rounded-lg border border-border bg-card p-3.5 shadow-md space-y-2 text-left">
+                    <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <ImageIcon className="h-4 w-4 text-primary" /> Submitted Payment Receipt Image:
+                    </p>
+                    <div className="rounded border border-border overflow-hidden bg-slate-950 p-1">
+                      <img
+                        src={currentBooking.paymentProofImage}
+                        alt="Submitted Payment Proof"
+                        className="max-h-48 mx-auto object-contain rounded"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div className="pt-4 flex flex-wrap justify-center gap-3">
                   <Button asChild variant="outline">
                     <Link to="/floor-plan">Return to Floor Plan</Link>
                   </Button>
                   <Button asChild>
-                    <Link to="/admin">Open Admin Panel to Approve</Link>
+                    <Link to="/admin">Open Admin Panel to Verify & Approve</Link>
                   </Button>
                 </div>
               </div>

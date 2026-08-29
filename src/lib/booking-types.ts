@@ -40,6 +40,7 @@ export interface Booking {
   status: BookingStatus;
   paymentStatus: PaymentStatus;
   paymentReference?: string | undefined;
+  paymentProofImage?: string | undefined;
   createdAt: number;
   expiresAt: number;
   paymentSubmittedAt?: number | undefined;

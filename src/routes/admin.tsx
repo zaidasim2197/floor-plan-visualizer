@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -82,6 +83,9 @@ import {
   FileText,
   ChevronRight,
   Sparkles,
+  FileImage,
+  ExternalLink,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -212,6 +216,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
   // Modals state
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [proofModalBooking, setProofModalBooking] = useState<Booking | null>(null);
   const [reassignModalOpen, setReassignModalOpen] = useState(false);
   const [newStallTarget, setNewStallTarget] = useState("");
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -576,7 +581,19 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         </td>
                         <td className="px-4 py-3 font-semibold">{formatMoney(b.amount)}</td>
                         <td className="px-4 py-3 font-mono text-muted-foreground">
-                          {b.paymentReference || "—"}
+                          <div>{b.paymentReference || "—"}</div>
+                          {b.paymentProofImage && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedBooking(b);
+                                setProofModalBooking(b);
+                              }}
+                              className="mt-1 inline-flex items-center gap-1 rounded bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300 border border-blue-500/30 hover:bg-blue-500/20 transition-all cursor-pointer"
+                            >
+                              <FileImage className="h-3 w-3 text-blue-600" /> Image Proof
+                            </button>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <AdminStatusBadge status={b.status} />
@@ -676,10 +693,37 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     <div className="mt-1"><AdminStatusBadge status={selectedBooking.status} /></div>
                   </div>
 
+                  {selectedBooking.paymentProofImage && (
+                    <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-blue-950 dark:text-blue-200 flex items-center gap-1">
+                          <FileImage className="h-3.5 w-3.5 text-blue-600" /> Payment Receipt Proof
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setProofModalBooking(selectedBooking)}
+                          className="text-[10px] font-bold text-blue-600 hover:underline"
+                        >
+                          Enlarge Image
+                        </button>
+                      </div>
+                      <div
+                        onClick={() => setProofModalBooking(selectedBooking)}
+                        className="rounded border border-border overflow-hidden bg-slate-950 p-1 cursor-pointer hover:opacity-90 transition-opacity"
+                      >
+                        <img
+                          src={selectedBooking.paymentProofImage}
+                          alt="Payment Proof Receipt"
+                          className="max-h-36 mx-auto object-contain rounded"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="pt-3 border-t border-border space-y-2">
                     {selectedBooking.status !== "CONFIRMED" && (
                       <Button className="w-full h-8 text-xs font-bold bg-emerald-600" onClick={() => handleApprove(selectedBooking.reference)}>
-                        Approve Booking
+                        Approve & Confirm Stall
                       </Button>
                     )}
                     <Button variant="outline" className="w-full h-8 text-xs font-bold" onClick={() => handleOpenEdit(selectedBooking)}>
@@ -939,6 +983,62 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               <Button type="submit" className="font-bold">Create Booking</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* PAYMENT PROOF RECEIPT LIGHTBOX DIALOG */}
+      <Dialog open={Boolean(proofModalBooking)} onOpenChange={(val) => !val && setProofModalBooking(null)}>
+        <DialogContent className="max-w-2xl bg-card border-border">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <Badge variant="outline" className="text-primary font-mono text-xs">
+                {proofModalBooking?.reference}
+              </Badge>
+              {proofModalBooking && <AdminStatusBadge status={proofModalBooking.status} />}
+            </div>
+            <DialogTitle className="text-xl font-extrabold text-foreground mt-2">
+              Payment Deposit Receipt — Space {proofModalBooking?.stallId}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Submitted by <strong>{proofModalBooking?.companyName}</strong> ({proofModalBooking?.customerName} · {proofModalBooking?.phone})
+            </DialogDescription>
+          </DialogHeader>
+
+          {proofModalBooking?.paymentProofImage && (
+            <div className="space-y-4 py-2">
+              <div className="rounded-xl border border-border bg-slate-950 p-3 shadow-inner text-center">
+                <img
+                  src={proofModalBooking.paymentProofImage}
+                  alt="Payment Proof Full Receipt"
+                  className="max-h-[420px] mx-auto object-contain rounded-lg shadow-lg"
+                />
+              </div>
+
+              <div className="rounded-lg bg-secondary p-3 text-xs font-mono space-y-1 border border-border">
+                <p>Transaction Reference: <strong className="text-foreground">{proofModalBooking.paymentReference || "N/A"}</strong></p>
+                <p>Exhibitor Email: <strong className="text-foreground">{proofModalBooking.email}</strong></p>
+                <p>Amount Required: <strong className="text-emerald-600">{formatMoney(proofModalBooking.amount)}</strong></p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            {proofModalBooking && proofModalBooking.status !== "CONFIRMED" && (
+              <Button
+                className="bg-emerald-600 hover:bg-emerald-700 font-extrabold text-xs h-10 flex-1"
+                onClick={() => {
+                  if (!proofModalBooking) return;
+                  handleApprove(proofModalBooking.reference);
+                  setProofModalBooking(null);
+                }}
+              >
+                <CheckCircle2 className="mr-1.5 h-4 w-4" /> Verify & Approve Space {proofModalBooking.stallId}
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setProofModalBooking(null)} className="h-10 text-xs font-bold">
+              Close Viewer
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </SiteLayout>

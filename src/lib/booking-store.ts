@@ -364,7 +364,11 @@ export function createBooking(
   return { ok: true, data: booking };
 }
 
-export function submitPaymentEvidence(reference: string, paymentReference: string): Result<Booking> {
+export function submitPaymentEvidence(
+  reference: string,
+  paymentReference: string,
+  paymentProofImage?: string,
+): Result<Booking> {
   load();
   sweepExpired();
   const b = state.bookings.find((x) => x.reference === reference);
@@ -375,9 +379,31 @@ export function submitPaymentEvidence(reference: string, paymentReference: strin
     b.paymentStatus = "EVIDENCE_SUBMITTED";
     b.paymentSubmittedAt = now();
     b.paymentReference = paymentReference;
-    log("PAYMENT_SUBMITTED", "customer", `Payment evidence ${paymentReference} submitted for ${b.stallId}.`, b.reference);
-    notify("ADMIN", eventConfig.contact.email, `Payment review required — ${b.reference}`, `${b.companyName} submitted payment reference ${paymentReference} for ${b.stallId}. The hold is protected until an admin reviews it.`, b.reference);
-    notify("CUSTOMER", b.email, `Payment received for review — ${b.reference}`, `Thank you. Your payment evidence is under review. Your space ${b.stallId} remains reserved while our team verifies the payment. You will receive a confirmation once approved.`, b.reference);
+    if (paymentProofImage) {
+      b.paymentProofImage = paymentProofImage;
+    }
+    log(
+      "PAYMENT_SUBMITTED",
+      "customer",
+      `Payment evidence ${paymentReference} ${paymentProofImage ? "(with receipt image proof) " : ""}submitted for ${b.stallId}.`,
+      b.reference,
+    );
+    notify(
+      "ADMIN",
+      eventConfig.contact.email,
+      `Payment Proof Submitted — ${b.reference} (Space ${b.stallId})`,
+      `Exhibitor ${b.customerName} (${b.companyName}) has submitted payment proof for space ${b.stallId}.${
+        paymentProofImage ? " Payment receipt image has been uploaded and is ready for admin verification." : ""
+      }\nTransaction Ref: ${paymentReference}\nBooking ID: ${b.reference}`,
+      b.reference,
+    );
+    notify(
+      "CUSTOMER",
+      b.email,
+      `Payment proof received for review — ${b.reference}`,
+      `Thank you. Your payment proof image and reference have been submitted successfully and are under review by Marriott Expo organizers. Your space ${b.stallId} is protected while our team verifies the payment.`,
+      b.reference,
+    );
     emit();
     return { ok: true, data: b };
   }
@@ -388,10 +414,30 @@ export function submitPaymentEvidence(reference: string, paymentReference: strin
     b.paymentStatus = "EVIDENCE_SUBMITTED";
     b.paymentSubmittedAt = now();
     b.paymentReference = paymentReference;
+    if (paymentProofImage) {
+      b.paymentProofImage = paymentProofImage;
+    }
     b.conflictReason = "Payment evidence received after the temporary hold expired.";
-    log("CONFLICT_CREATED", "system", `Late payment on ${b.stallId} for ${b.companyName}. Manual resolution required.`, b.reference);
-    notify("ADMIN", eventConfig.contact.email, `Payment conflict detected — ${b.reference}`, `Payment reference ${paymentReference} arrived after booking ${b.reference} expired. Space ${b.stallId} may now belong to another customer. Manual resolution required.`, b.reference);
-    notify("CUSTOMER", b.email, `We are reviewing your payment — ${b.reference}`, `Your payment arrived after the reservation window closed. Our team is reviewing your case and will contact you shortly. Your payment record has been preserved.`, b.reference);
+    log(
+      "CONFLICT_CREATED",
+      "system",
+      `Late payment on ${b.stallId} for ${b.companyName}. Manual resolution required.`,
+      b.reference,
+    );
+    notify(
+      "ADMIN",
+      eventConfig.contact.email,
+      `Payment conflict detected — ${b.reference}`,
+      `Payment reference ${paymentReference} arrived after booking ${b.reference} expired. Space ${b.stallId} may now belong to another customer. Manual resolution required.`,
+      b.reference,
+    );
+    notify(
+      "CUSTOMER",
+      b.email,
+      `We are reviewing your payment — ${b.reference}`,
+      `Your payment arrived after the reservation window closed. Our team is reviewing your case and will contact you shortly. Your payment record has been preserved.`,
+      b.reference,
+    );
     emit();
     return { ok: true, data: b };
   }
