@@ -85,14 +85,14 @@ function Index() {
                 <Link to="/floor-plan">Explore Floor Plan</Link>
               </Button>
             </div>
-
+            {/* 
             <div className="mt-8 flex items-center gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
                 <BadgeCheck className="h-4 w-4" /> Real-Time Hold Verification
               </span>
               <span>•</span>
               <span>{stats.available} of {stats.total} Spaces Available</span>
-            </div>
+            </div> */}
           </div>
 
           <div className="lg:col-span-5 flex flex-col gap-6">

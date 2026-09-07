@@ -365,7 +365,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 sm:px-2">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 text-emerald-400">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" /> Booking System: Operational
+              Booking System: Operational
             </span>
             <span className="opacity-30">•</span>
             <span className="opacity-80">Database: Connected</span>
@@ -988,33 +988,33 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
       {/* PAYMENT PROOF RECEIPT LIGHTBOX DIALOG */}
       <Dialog open={Boolean(proofModalBooking)} onOpenChange={(val) => !val && setProofModalBooking(null)}>
-        <DialogContent className="max-w-2xl bg-card border-border">
-          <DialogHeader>
-            <div className="flex items-center justify-between">
+        <DialogContent className="max-w-2xl max-h-[92vh] flex flex-col overflow-y-auto bg-card border-border p-5 sm:p-6 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-thumb]:rounded-full">
+          <DialogHeader className="shrink-0 pr-6 sm:pr-8">
+            <div className="flex items-center justify-between gap-3">
               <Badge variant="outline" className="text-primary font-mono text-xs">
                 {proofModalBooking?.reference}
               </Badge>
               {proofModalBooking && <AdminStatusBadge status={proofModalBooking.status} />}
             </div>
-            <DialogTitle className="text-xl font-extrabold text-foreground mt-2">
+            <DialogTitle className="text-lg sm:text-xl font-extrabold text-foreground mt-2">
               Payment Deposit Receipt — Space {proofModalBooking?.stallId}
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
               Submitted by <strong>{proofModalBooking?.companyName}</strong> ({proofModalBooking?.customerName} · {proofModalBooking?.phone})
             </DialogDescription>
           </DialogHeader>
 
           {proofModalBooking?.paymentProofImage && (
-            <div className="space-y-4 py-2">
-              <div className="rounded-xl border border-border bg-slate-950 p-3 shadow-inner text-center">
+            <div className="space-y-3 py-2 flex-1 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-thumb]:rounded-full">
+              <div className="rounded-xl border border-border bg-slate-950 p-2 shadow-inner text-center">
                 <img
                   src={proofModalBooking.paymentProofImage}
                   alt="Payment Proof Full Receipt"
-                  className="max-h-[420px] mx-auto object-contain rounded-lg shadow-lg"
+                  className="max-h-[42vh] sm:max-h-[320px] w-auto mx-auto object-contain rounded-lg shadow-lg"
                 />
               </div>
 
-              <div className="rounded-lg bg-secondary p-3 text-xs font-mono space-y-1 border border-border">
+              <div className="rounded-lg bg-secondary p-3 text-xs font-mono space-y-1 border border-border shrink-0">
                 <p>Transaction Reference: <strong className="text-foreground">{proofModalBooking.paymentReference || "N/A"}</strong></p>
                 <p>Exhibitor Email: <strong className="text-foreground">{proofModalBooking.email}</strong></p>
                 <p>Amount Required: <strong className="text-emerald-600">{formatMoney(proofModalBooking.amount)}</strong></p>
@@ -1022,7 +1022,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             </div>
           )}
 
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 shrink-0 pt-3 border-t border-border/50">
             {proofModalBooking && proofModalBooking.status !== "CONFIRMED" && (
               <Button
                 className="bg-emerald-600 hover:bg-emerald-700 font-extrabold text-xs h-10 flex-1"
