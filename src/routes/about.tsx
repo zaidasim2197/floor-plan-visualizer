@@ -93,7 +93,7 @@ function AboutPage() {
             <div className="mt-8 pt-6 border-t border-border flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground uppercase font-bold">Organizing Body</p>
-                <p className="text-sm font-bold text-foreground">Marriott Trade & Exhibitions Directorate</p>
+                <p className="text-sm font-bold text-foreground">VenueFlow Events</p>
               </div>
               <Button asChild size="sm">
                 <Link to="/floor-plan">

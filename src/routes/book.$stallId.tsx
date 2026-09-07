@@ -242,8 +242,8 @@ export function BookStallPage() {
       email_address: currentBooking.email,
       m_payment_id: currentBooking.reference,
       amount: currentBooking.amount.toFixed(2),
-      item_name: `Marriott Expo Space Booking - Space ${currentBooking.stallId}`,
-      item_description: `Exhibition Space Rental for Marriott Exhibition & Trade Expo 2027 (${currentBooking.companyName})`,
+      item_name: `VenueFlow Expo Space Booking - Space ${currentBooking.stallId}`,
+      item_description: `Exhibition Space Rental for VenueFlow Business Expo 2027 (${currentBooking.companyName})`,
     };
 
     toast.loading("Redirecting to PayFast Payment Gateway...");
@@ -712,15 +712,15 @@ export function BookStallPage() {
                   </div>
                   <div className="flex justify-between border-b border-border/50 pb-1.5">
                     <span className="text-muted-foreground">Account Title:</span>
-                    <span className="font-bold text-foreground">Marriott Trade & Exhibitions Ltd</span>
+                    <span className="font-bold text-foreground">VenueFlow Events Ltd</span>
                   </div>
                   <div className="flex justify-between border-b border-border/50 pb-1.5">
                     <span className="text-muted-foreground">IBAN Number:</span>
-                    <span className="font-bold text-foreground">PK36 HABB 0001 2345 6789 0102</span>
+                    <span className="font-bold text-foreground">PK36 VNFL 0001 2345 6789 0102</span>
                   </div>
                   <div className="flex justify-between border-b border-border/50 pb-1.5">
                     <span className="text-muted-foreground">Branch / SWIFT:</span>
-                    <span className="font-bold text-foreground">HABBPKKA</span>
+                    <span className="font-bold text-foreground">VNFLPKKA</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Booking Reference:</span>
@@ -851,7 +851,7 @@ export function BookStallPage() {
                 <CheckCircle2 className="mx-auto h-14 w-14 text-blue-600" />
                 <h2 className="text-xl font-bold text-foreground">Payment Proof Submitted & Under Review</h2>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  Thank you! Your payment proof and reference (<strong>{currentBooking.paymentReference}</strong>) have been submitted. Your space hold is protected while Marriott Expo organizers verify the payment.
+                  Thank you! Your payment proof and reference (<strong>{currentBooking.paymentReference}</strong>) have been submitted. Your space hold is protected while VenueFlow Events organizers verify the payment.
                 </p>
 
                 {currentBooking.paymentProofImage && (

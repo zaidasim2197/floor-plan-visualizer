@@ -1,4 +1,4 @@
-# Marriott Exhibition & Trade Expo 2026 — Space Booking Platform
+# VenueFlow Exhibition & Trade Expo — Space Booking Platform
 
 A high-performance, functional end-to-end exhibition floor map visualizer and stall booking platform architecture.
 

@@ -97,7 +97,7 @@ function AdminPage() {
   // Authentication Gate
   const [authenticated, setAuthenticated] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
-      return window.localStorage.getItem("marriott_admin_auth") === "true";
+      return window.localStorage.getItem("venueflow_admin_auth") === "true";
     }
     return false;
   });
@@ -115,7 +115,7 @@ function AdminPage() {
     ) {
       setAuthenticated(true);
       if (typeof window !== "undefined") {
-        window.localStorage.setItem("marriott_admin_auth", "true");
+        window.localStorage.setItem("venueflow_admin_auth", "true");
       }
       toast.success("Authenticated as Administrator.");
     } else {
@@ -126,7 +126,7 @@ function AdminPage() {
   const handleLogout = () => {
     setAuthenticated(false);
     if (typeof window !== "undefined") {
-      window.localStorage.removeItem("marriott_admin_auth");
+      window.localStorage.removeItem("venueflow_admin_auth");
     }
     toast.info("Logged out of Admin Portal.");
   };

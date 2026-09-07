@@ -4,8 +4,8 @@
  */
 
 export const eventConfig = {
-  name: "Marriott Exhibition & Trade Expo",
-  tagline: "Where industry leaders, innovators and buyers meet.",
+  name: "VenueFlow Business Expo 2027",
+  tagline: "The premier exhibition booking platform for industry leaders and enterprise buyers.",
   description:
     "A two-day curated exhibition bringing together manufacturers, technology providers, distributors and enterprise buyers under one roof.",
   edition: "2027 Edition",
@@ -14,14 +14,14 @@ export const eventConfig = {
   dateLabel: "28 – 29 January 2027",
   timeLabel: "09:00 – 18:00 PKT",
   venue: {
-    name: "Marriott Hotel, Grand Ballroom",
+    name: "VenueFlow Convention Center, Grand Exhibition Hall",
     city: "Karachi, Pakistan",
-    address: "Abdullah Haroon Road, Karachi 75530",
+    address: "VenueFlow Convention Center, Main Expo Boulevard, Karachi",
   },
   currency: "PKR",
   contact: {
-    email: "exhibitions@demo-expo.pk",
-    phone: "+92 21 3568 0000",
+    email: "events@venueflow-demo.com",
+    phone: "+92 21 0000 0000",
     whatsapp: ["+92 300 1234567", "+92 321 7654321"],
   },
   booking: {

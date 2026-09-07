@@ -29,7 +29,7 @@ function AttendeesPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setIsAdmin(localStorage.getItem("marriott_admin_session") === "true");
+      setIsAdmin(localStorage.getItem("venueflow_admin_auth") === "true");
     }
   }, []);
 

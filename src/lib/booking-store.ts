@@ -20,7 +20,7 @@ import {
  * not require changing any component.
  */
 
-const STORAGE_KEY = "marriott-expo-demo-state-v1";
+const STORAGE_KEY = "venueflow-expo-demo-state-v1";
 const HOLD_MS = eventConfig.booking.paymentPendingMinutes * 60 * 1000;
 
 interface StoreState {
@@ -118,7 +118,7 @@ function seed(): StoreState {
 let state: StoreState = { bookings: [], audit: [], notifications: [], seq: 0 };
 let hydrated = false;
 const listeners = new Set<() => void>();
-const SYNC_CHANNEL = "marriott_expo_realtime_sync";
+const SYNC_CHANNEL = "venueflow_expo_realtime_sync";
 let broadcastChannel: BroadcastChannel | null = null;
 
 function reloadFromStorage() {
@@ -401,7 +401,7 @@ export function submitPaymentEvidence(
       "CUSTOMER",
       b.email,
       `Payment proof received for review — ${b.reference}`,
-      `Thank you. Your payment proof image and reference have been submitted successfully and are under review by Marriott Expo organizers. Your space ${b.stallId} is protected while our team verifies the payment.`,
+      `Thank you. Your payment proof image and reference have been submitted successfully and are under review by VenueFlow Events organizers. Your space ${b.stallId} is protected while our team verifies the payment.`,
       b.reference,
     );
     emit();

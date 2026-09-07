@@ -6,7 +6,7 @@ export function BrandLogo({ className = "h-9 w-9" }: { className?: string }) {
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className={className}
-        aria-label="Marriott Expo Logo"
+        aria-label="VenueFlow Logo"
       >
         <rect width="40" height="40" rx="9" fill="#153e2d" />
         <rect x="1" y="1" width="38" height="38" rx="8" stroke="#2b6b4f" strokeWidth="1" />

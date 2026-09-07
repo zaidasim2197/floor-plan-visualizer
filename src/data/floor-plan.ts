@@ -2,8 +2,7 @@ import type { Stall } from "@/lib/booking-types";
 
 /**
  * DEMO EXHIBITION LAYOUT — fictional layout inspired by professional venue maps.
- * This is not the real Marriott floor plan. Replace this data file (and only this
- * file) when the client supplies the official plan.
+ * VenueFlow Exhibition Hall Layout.
  */
 
 export const MAP_WIDTH = 1200;
