@@ -3,7 +3,7 @@
  * Everything the client may want to change later lives here — not in components.
  */
 
-export const eventConfig = {
+export const defaultEventConfig = {
   name: "VenueFlow Business Expo 2027",
   tagline: "The premier exhibition booking platform for industry leaders and enterprise buyers.",
   description:
@@ -47,7 +47,13 @@ export const eventConfig = {
     environment: "sandbox",
   },
   floorPlanLabel: "Demo Exhibition Layout",
-} as const;
+};
 
-export const whatsappLink = (number: string, message: string) =>
-  `https://wa.me/${number.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
+export type EventConfig = typeof defaultEventConfig;
+export let eventConfig: EventConfig = structuredClone(defaultEventConfig);
+export function applyEventConfig(config: EventConfig) {
+  eventConfig = config;
+}
+
+export const whatsappLink = (number: string | undefined, message: string) =>
+  `https://wa.me/${(number ?? eventConfig.contact.phone).replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;

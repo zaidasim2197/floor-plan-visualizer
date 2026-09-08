@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
 import { eventConfig } from "@/config/event";
 import { stalls, getStall } from "@/data/floor-plan";
+import { activeEvent, activeEventId, DEFAULT_EVENT_ID, saveSpaces } from "@/lib/event-store";
+import { z } from "zod";
 import {
   ACTIVE_STATUSES,
   type AuditEvent,
@@ -8,6 +10,7 @@ import {
   type BookingStatus,
   type NotificationRecord,
   type StallStatus,
+  type Stall,
 } from "@/lib/booking-types";
 
 /**
@@ -15,13 +18,15 @@ import {
  * ---------------------------------
  * This module is the single source of truth for booking state in the prototype.
  * It intentionally mirrors the shape of a real server/database service:
- * every mutation is a guarded, all-or-nothing transition that re-checks stall
- * availability before writing. Swapping this file for real API calls later does
- * not require changing any component.
+ * Mutations validate transitions in one browser. Cross-client locking, durable
+ * persistence and authentication must be supplied by the backend adapter.
  */
 
-const STORAGE_KEY = "venueflow-expo-demo-state-v1";
-const HOLD_MS = eventConfig.booking.paymentPendingMinutes * 60 * 1000;
+const storageKey = () =>
+  activeEventId() === DEFAULT_EVENT_ID
+    ? "venueflow-expo-demo-state-v1"
+    : `venueflow-bookings-${activeEventId()}-v1`;
+const holdMs = () => eventConfig.booking.paymentPendingMinutes * 60 * 1000;
 
 interface StoreState {
   bookings: Booking[];
@@ -48,12 +53,14 @@ function seed(): StoreState {
     minutesAgo: number,
     extra: Partial<Booking> = {},
   ) => {
-    const stall = getStall(stallId)!;
+    const stall = getStall(stallId);
+    if (!stall) return;
     state.seq += 1;
     const createdAt = t - minutesAgo * 60 * 1000;
     const booking: Booking = {
+      eventId: activeEventId(),
       id: uid(),
-      reference: `EVT-2027-${String(1000 + state.seq).slice(1)}`,
+      reference: formatReference(state.seq),
       stallId,
       customerName: customer,
       companyName: company,
@@ -63,9 +70,14 @@ function seed(): StoreState {
       notes: "",
       amount: stall.price,
       status,
-      paymentStatus: status === "CONFIRMED" ? "VERIFIED" : status === "PAYMENT_REVIEW" ? "EVIDENCE_SUBMITTED" : "UNPAID",
+      paymentStatus:
+        status === "CONFIRMED"
+          ? "VERIFIED"
+          : status === "PAYMENT_REVIEW"
+            ? "EVIDENCE_SUBMITTED"
+            : "UNPAID",
       createdAt,
-      expiresAt: createdAt + HOLD_MS,
+      expiresAt: createdAt + holdMs(),
       source: "PUBLIC",
       ...extra,
     };
@@ -81,6 +93,22 @@ function seed(): StoreState {
     return booking;
   };
 
+  if (activeEventId() !== DEFAULT_EVENT_ID) {
+    if (activeEvent()?.sample && stalls.length >= 4) {
+      mk(stalls[0]!.id, "CONFIRMED", "Mariam Shah", "Clay & Co.", 180, {
+        confirmedAt: t - 120 * 60000,
+      });
+      mk(stalls[1]!.id, "PAYMENT_REVIEW", "Ali Farooq", "Thread Studio", 50, {
+        paymentReference: "MM-72145",
+        paymentSubmittedAt: t - 35 * 60000,
+      });
+      mk(stalls[2]!.id, "PAYMENT_PENDING", "Hira Aziz", "Paper Garden", 5);
+      mk(stalls[3]!.id, "CANCELLED", "Omar Mir", "Woodland Workshop", 240, {
+        cancelledAt: t - 200 * 60000,
+      });
+    }
+    return state;
+  }
   mk("A02", "PAYMENT_PENDING", "Hamza Iqbal", "Northline Systems", 6);
   mk("B03", "PAYMENT_PENDING", "Sana Raza", "Vertex Instruments", 12);
   mk("C04", "PAYMENT_PENDING", "Bilal Ahmed", "Orbit Logistics", 19);
@@ -93,7 +121,13 @@ function seed(): StoreState {
     paymentReference: "TRX-448233",
   });
   const seedNames = ["Zara Malik", "Faisal Sheikh", "Nida Aslam", "Rehan Qureshi", "Maria Yousuf"];
-  const seedCompanies = ["Arcadia Textiles", "Helix Robotics", "Bluepeak Pharma", "Sona Ceramics", "Tallgrass Agri"];
+  const seedCompanies = [
+    "Arcadia Textiles",
+    "Helix Robotics",
+    "Bluepeak Pharma",
+    "Sona Ceramics",
+    "Tallgrass Agri",
+  ];
   ["A01", "B05", "C01", "C05", "D01"].forEach((id, i) =>
     mk(id, "CONFIRMED", seedNames[i] ?? "Exhibitor", seedCompanies[i] ?? "Company", 600 + i * 30, {
       confirmedAt: t - (500 + i * 20) * 60 * 1000,
@@ -117,14 +151,16 @@ function seed(): StoreState {
 
 let state: StoreState = { bookings: [], audit: [], notifications: [], seq: 0 };
 let hydrated = false;
+let loadedEventId = "";
 const listeners = new Set<() => void>();
 const SYNC_CHANNEL = "venueflow_expo_realtime_sync";
 let broadcastChannel: BroadcastChannel | null = null;
 
 function reloadFromStorage() {
   if (typeof window === "undefined") return;
+  load();
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKey());
     if (raw) {
       state = JSON.parse(raw) as StoreState;
       sweepExpired();
@@ -146,7 +182,7 @@ if (typeof window !== "undefined") {
     }
 
     window.addEventListener("storage", (e) => {
-      if (e.key === STORAGE_KEY) {
+      if (e.key === storageKey()) {
         reloadFromStorage();
       }
     });
@@ -161,11 +197,13 @@ if (typeof window !== "undefined") {
 }
 
 function load() {
-  if (hydrated || typeof window === "undefined") return;
+  if ((hydrated && loadedEventId === activeEventId()) || typeof window === "undefined") return;
+  loadedEventId = activeEventId();
   hydrated = true;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKey());
     state = raw ? (JSON.parse(raw) as StoreState) : seed();
+    state.bookings = state.bookings.map((b) => ({ ...b, eventId: activeEventId() }));
   } catch {
     state = seed();
   }
@@ -177,7 +215,7 @@ function load() {
 function persist() {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    window.localStorage.setItem(storageKey(), JSON.stringify(state));
   } catch {
     /* storage unavailable — demo continues in memory */
   }
@@ -186,6 +224,13 @@ function persist() {
 let cachedSnapshot: StoreState = state;
 
 function emit() {
+  // New collection identities immediately invalidate derived filters and totals.
+  state = {
+    ...state,
+    bookings: [...state.bookings],
+    audit: [...state.audit],
+    notifications: [...state.notifications],
+  };
   persist();
   cachedSnapshot = { ...state };
   listeners.forEach((l) => l());
@@ -279,7 +324,12 @@ export function sweepExpired() {
     if (b.status === "PAYMENT_PENDING" && b.expiresAt < t) {
       b.status = "EXPIRED";
       changed = true;
-      log("BOOKING_EXPIRED", "system", `Temporary hold on ${b.stallId} expired without payment.`, b.reference);
+      log(
+        "BOOKING_EXPIRED",
+        "system",
+        `Temporary hold on ${b.stallId} expired without payment.`,
+        b.reference,
+      );
       notify(
         "CUSTOMER",
         b.email,
@@ -308,9 +358,25 @@ export interface BookingInput {
   notes: string;
 }
 
+export const bookingInputSchema = z.object({
+  customerName: z.string().trim().min(2, "Enter a customer name."),
+  companyName: z.string().trim().min(2, "Enter a company name."),
+  email: z.string().trim().email("Enter a valid email address."),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[\d\s()-]{7,25}$/, "Enter a valid phone number."),
+  productService: z.string().trim().max(500),
+  notes: z.string().trim().max(2000),
+});
+
 function nextReference() {
   state.seq += 1;
-  return `EVT-2027-${String(1000 + state.seq).slice(1)}`;
+  return formatReference(state.seq);
+}
+
+function formatReference(sequence: number) {
+  return `${activeEventId().slice(0, 8).toUpperCase()}-${eventConfig.startDate.slice(0, 4)}-${String(sequence).padStart(4, "0")}`;
 }
 
 /** Atomic create: re-checks availability immediately before writing. */
@@ -322,28 +388,47 @@ export function createBooking(
 ): Result<Booking> {
   load();
   sweepExpired();
+  const validated = bookingInputSchema.safeParse(input);
+  if (!validated.success)
+    return { ok: false, error: validated.error.issues[0]?.message ?? "Check booking details." };
+  if (presetStatus && !["CONFIRMED", "PAYMENT_PENDING", "PAYMENT_REVIEW"].includes(presetStatus))
+    return { ok: false, error: "Invalid initial booking status." };
   const stall = getStall(stallId);
   if (!stall) return { ok: false, error: "This space does not exist." };
   if (activeBookingForStall(state.bookings, stallId)) {
-    return { ok: false, error: "This space was just taken by another customer. Please choose another space." };
+    return {
+      ok: false,
+      error: "This space was just taken by another customer. Please choose another space.",
+    };
   }
 
   const t = now();
   const booking: Booking = {
+    eventId: activeEventId(),
     id: uid(),
     reference: nextReference(),
     stallId,
-    ...input,
+    ...validated.data,
     amount: stall.price,
     status: presetStatus ?? "PAYMENT_PENDING",
-    paymentStatus: presetStatus === "CONFIRMED" ? "VERIFIED" : "UNPAID",
+    paymentStatus:
+      presetStatus === "CONFIRMED"
+        ? "VERIFIED"
+        : presetStatus === "PAYMENT_REVIEW"
+          ? "EVIDENCE_SUBMITTED"
+          : "UNPAID",
     createdAt: t,
-    expiresAt: t + HOLD_MS,
+    expiresAt: t + holdMs(),
     confirmedAt: presetStatus === "CONFIRMED" ? t : undefined,
     source,
   };
   state.bookings.unshift(booking);
-  log("BOOKING_CREATED", source === "ADMIN" ? "admin" : "customer", `${booking.stallId} held for ${booking.companyName}.`, booking.reference);
+  log(
+    "BOOKING_CREATED",
+    source === "ADMIN" ? "admin" : "customer",
+    `${booking.stallId} held for ${booking.companyName}.`,
+    booking.reference,
+  );
   notify(
     "ADMIN",
     eventConfig.contact.email,
@@ -371,6 +456,13 @@ export function submitPaymentEvidence(
 ): Result<Booking> {
   load();
   sweepExpired();
+  if (!paymentReference.trim()) return { ok: false, error: "Enter a transaction reference." };
+  if (
+    paymentProofImage &&
+    (!/^data:image\/(png|jpeg|webp);base64,/.test(paymentProofImage) ||
+      paymentProofImage.length > 1400000)
+  )
+    return { ok: false, error: "Use a PNG, JPEG or WebP receipt smaller than 1 MB." };
   const b = state.bookings.find((x) => x.reference === reference);
   if (!b) return { ok: false, error: "Booking not found." };
 
@@ -393,7 +485,9 @@ export function submitPaymentEvidence(
       eventConfig.contact.email,
       `Payment Proof Submitted — ${b.reference} (Space ${b.stallId})`,
       `Exhibitor ${b.customerName} (${b.companyName}) has submitted payment proof for space ${b.stallId}.${
-        paymentProofImage ? " Payment receipt image has been uploaded and is ready for admin verification." : ""
+        paymentProofImage
+          ? " Payment receipt image has been uploaded and is ready for admin verification."
+          : ""
       }\nTransaction Ref: ${paymentReference}\nBooking ID: ${b.reference}`,
       b.reference,
     );
@@ -451,6 +545,11 @@ export function confirmOnlineCardPayment(reference: string, cardTxnRef: string):
   const b = state.bookings.find((x) => x.reference === reference);
   if (!b) return { ok: false, error: "Booking not found." };
   if (b.status === "CONFIRMED") return { ok: true, data: b };
+  if (!["PAYMENT_PENDING", "PAYMENT_REVIEW"].includes(b.status))
+    return {
+      ok: false,
+      error: "This reservation is no longer active. Contact the organiser about late payments.",
+    };
 
   const holder = activeBookingForStall(state.bookings, b.stallId);
   if (holder && holder.reference !== b.reference) {
@@ -491,42 +590,86 @@ export function confirmOnlineCardPayment(reference: string, cardTxnRef: string):
 
 export function approveBooking(reference: string): Result<Booking> {
   load();
+  sweepExpired();
   const b = state.bookings.find((x) => x.reference === reference);
   if (!b) return { ok: false, error: "Booking not found." };
+  if (!["PAYMENT_PENDING", "PAYMENT_REVIEW", "CONFLICT"].includes(b.status))
+    return { ok: false, error: "Only an active reservation or payment conflict can be approved." };
   if (b.status === "CONFIRMED") return { ok: false, error: "This booking is already confirmed." };
 
   const holder = activeBookingForStall(state.bookings, b.stallId);
   if (holder && holder.reference !== b.reference) {
-    return { ok: false, error: `Space ${b.stallId} is currently held by ${holder.reference}. Release or reassign it first.` };
+    return {
+      ok: false,
+      error: `Space ${b.stallId} is currently held by ${holder.reference}. Release or reassign it first.`,
+    };
   }
 
   b.status = "CONFIRMED";
   b.paymentStatus = "VERIFIED";
   b.confirmedAt = now();
-  log("BOOKING_APPROVED", "admin", `Payment verified and ${b.stallId} confirmed for ${b.companyName}.`, b.reference);
-  notify("CUSTOMER", b.email, `Booking confirmed — ${b.stallId}`, `Payment received and your exhibition space is confirmed.\nCustomer: ${b.customerName}\nBooking ID: ${b.reference}\nSpace: ${b.stallId}\nEvent: ${eventConfig.name}, ${eventConfig.dateLabel}, ${eventConfig.venue.name}.`, b.reference);
+  log(
+    "BOOKING_APPROVED",
+    "admin",
+    `Payment verified and ${b.stallId} confirmed for ${b.companyName}.`,
+    b.reference,
+  );
+  notify(
+    "CUSTOMER",
+    b.email,
+    `Booking confirmed — ${b.stallId}`,
+    `Payment received and your exhibition space is confirmed.\nCustomer: ${b.customerName}\nBooking ID: ${b.reference}\nSpace: ${b.stallId}\nEvent: ${eventConfig.name}, ${eventConfig.dateLabel}, ${eventConfig.venue.name}.`,
+    b.reference,
+  );
   emit();
   return { ok: true, data: b };
 }
 
-export function releaseBooking(reference: string, reason: "RELEASED" | "CANCELLED"): Result<Booking> {
+export function releaseBooking(
+  reference: string,
+  reason: "RELEASED" | "CANCELLED",
+): Result<Booking> {
   load();
   const b = state.bookings.find((x) => x.reference === reference);
   if (!b) return { ok: false, error: "Booking not found." };
+  if (!ACTIVE_STATUSES.includes(b.status))
+    return { ok: false, error: "This reservation is no longer active." };
+  if (b.paymentStatus === "VERIFIED" || b.paymentStatus === "EVIDENCE_SUBMITTED")
+    b.paymentStatus = "REFUND_PENDING";
   b.status = reason === "CANCELLED" ? "CANCELLED" : "EXPIRED";
   b.cancelledAt = now();
-  log(reason === "CANCELLED" ? "BOOKING_CANCELLED" : "BOOKING_RELEASED", "admin", `${b.stallId} released back to available. Customer: ${b.companyName}.`, b.reference);
-  notify("CUSTOMER", b.email, `Reservation released — ${b.reference}`, `Your reservation for space ${b.stallId} has been released by the organiser. If this is unexpected, please contact us.`, b.reference);
+  log(
+    reason === "CANCELLED" ? "BOOKING_CANCELLED" : "BOOKING_RELEASED",
+    "admin",
+    `${b.stallId} released back to available. Customer: ${b.companyName}.`,
+    b.reference,
+  );
+  notify(
+    "CUSTOMER",
+    b.email,
+    `Reservation released — ${b.reference}`,
+    `Your reservation for space ${b.stallId} has been released by the organiser. If this is unexpected, please contact us.`,
+    b.reference,
+  );
   emit();
   return { ok: true, data: b };
 }
 
 export function reassignBooking(reference: string, newStallId: string): Result<Booking> {
   load();
+  sweepExpired();
   const b = state.bookings.find((x) => x.reference === reference);
   if (!b) return { ok: false, error: "Booking not found." };
+  if (![...ACTIVE_STATUSES, "CONFLICT"].includes(b.status))
+    return { ok: false, error: "Only an active booking or conflict can be reassigned." };
   const stall = getStall(newStallId);
   if (!stall) return { ok: false, error: "Target space does not exist." };
+  if (b.paymentStatus === "VERIFIED" && b.amount !== stall.price)
+    return {
+      ok: false,
+      error:
+        "A verified booking can only move to an equally priced space. A price adjustment needs backend payment reconciliation.",
+    };
   const holder = activeBookingForStall(state.bookings, newStallId);
   if (holder && holder.reference !== reference) {
     return { ok: false, error: `Space ${newStallId} is not available.` };
@@ -535,8 +678,19 @@ export function reassignBooking(reference: string, newStallId: string): Result<B
   b.stallId = newStallId;
   b.amount = stall.price;
   if (b.status === "CONFLICT" || b.status === "EXPIRED") b.status = "PAYMENT_REVIEW";
-  log("BOOKING_REASSIGNED", "admin", `Moved ${b.companyName} from ${from} to ${newStallId}.`, b.reference);
-  notify("CUSTOMER", b.email, `Your space has been updated — ${b.reference}`, `Your exhibition space has been moved from ${from} to ${newStallId}. Amount: PKR ${b.amount.toLocaleString()}.`, b.reference);
+  log(
+    "BOOKING_REASSIGNED",
+    "admin",
+    `Moved ${b.companyName} from ${from} to ${newStallId}.`,
+    b.reference,
+  );
+  notify(
+    "CUSTOMER",
+    b.email,
+    `Your space has been updated — ${b.reference}`,
+    `Your exhibition space has been moved from ${from} to ${newStallId}. Amount: PKR ${b.amount.toLocaleString()}.`,
+    b.reference,
+  );
   emit();
   return { ok: true, data: b };
 }
@@ -545,7 +699,10 @@ export function updateBooking(reference: string, patch: Partial<BookingInput>): 
   load();
   const b = state.bookings.find((x) => x.reference === reference);
   if (!b) return { ok: false, error: "Booking not found." };
-  Object.assign(b, patch);
+  const validated = bookingInputSchema.safeParse({ ...b, ...patch });
+  if (!validated.success)
+    return { ok: false, error: validated.error.issues[0]?.message ?? "Check booking details." };
+  Object.assign(b, validated.data);
   log("BOOKING_UPDATED", "admin", `Booking details updated for ${b.reference}.`, b.reference);
   emit();
   return { ok: true, data: b };
@@ -555,11 +712,19 @@ export function resolveConflict(reference: string, resolution: string): Result<B
   load();
   const b = state.bookings.find((x) => x.reference === reference);
   if (!b) return { ok: false, error: "Booking not found." };
+  if (b.status !== "CONFLICT")
+    return { ok: false, error: "Only a payment conflict can be resolved this way." };
   b.status = "CANCELLED";
   b.paymentStatus = "REFUND_PENDING";
   b.cancelledAt = now();
   log("CONFLICT_RESOLVED", "admin", `${resolution} — ${b.reference}`, b.reference);
-  notify("CUSTOMER", b.email, `Update on your booking — ${b.reference}`, `${resolution}. Our team will be in touch to complete the process.`, b.reference);
+  notify(
+    "CUSTOMER",
+    b.email,
+    `Update on your booking — ${b.reference}`,
+    `${resolution}. Our team will be in touch to complete the process.`,
+    b.reference,
+  );
   emit();
   return { ok: true, data: b };
 }
@@ -571,7 +736,12 @@ export function expireNow(reference: string): Result<Booking> {
   b.expiresAt = now() - 1000;
   if (b.status === "PAYMENT_PENDING") {
     b.status = "EXPIRED";
-    log("BOOKING_EXPIRED", "system", `Hold on ${b.stallId} force-expired for demonstration.`, b.reference);
+    log(
+      "BOOKING_EXPIRED",
+      "system",
+      `Hold on ${b.stallId} force-expired for demonstration.`,
+      b.reference,
+    );
   }
   emit();
   return { ok: true, data: b };
@@ -585,4 +755,67 @@ export function resetDemoData() {
 
 export function findBooking(bookings: Booking[], reference: string) {
   return bookings.find((b) => b.reference === reference);
+}
+
+export function getBookingSnapshot() {
+  load();
+  sweepExpired();
+  return structuredClone(state);
+}
+
+export function saveManagedSpaces(spaces: Stall[]) {
+  load();
+  const removed = stalls.filter((s) => !spaces.some((next) => next.id === s.id));
+  if (removed.some((s) => state.bookings.some((b) => b.stallId === s.id)))
+    throw new Error("Spaces with booking history cannot be removed.");
+  saveSpaces(spaces);
+  log("SPACES_UPDATED", "admin", `Space inventory updated: ${spaces.length} spaces.`);
+  emit();
+}
+
+export function rejectPaymentEvidence(reference: string, reason: string): Result<Booking> {
+  load();
+  const b = state.bookings.find((x) => x.reference === reference);
+  if (!b || b.status !== "PAYMENT_REVIEW")
+    return { ok: false, error: "Only evidence under review can be returned." };
+  if (reason.trim().length < 5)
+    return { ok: false, error: "Give a reason for requesting corrected evidence." };
+  b.status = "PAYMENT_PENDING";
+  b.paymentStatus = "UNPAID";
+  b.expiresAt = now() + holdMs();
+  log(
+    "PAYMENT_EVIDENCE_RETURNED",
+    "admin",
+    `${reason.trim()} Previous reference: ${b.paymentReference ?? "none"}. A new payment hold has started.`,
+    reference,
+  );
+  b.paymentProofImage = undefined;
+  b.paymentReference = undefined;
+  b.paymentSubmittedAt = undefined;
+  notify(
+    "CUSTOMER",
+    b.email,
+    `Payment evidence needs attention — ${reference}`,
+    `${reason.trim()}. Please resubmit within ${eventConfig.booking.paymentPendingMinutes} minutes.`,
+    reference,
+  );
+  emit();
+  return { ok: true, data: b };
+}
+
+export function completeRefund(reference: string, transaction: string): Result<Booking> {
+  load();
+  const b = state.bookings.find((x) => x.reference === reference);
+  if (!b || b.paymentStatus !== "REFUND_PENDING")
+    return { ok: false, error: "No refund is pending for this booking." };
+  if (!transaction.trim()) return { ok: false, error: "Enter the refund transaction reference." };
+  b.paymentStatus = "REFUNDED";
+  log(
+    "REFUND_COMPLETED",
+    "admin",
+    `Manual refund recorded. Transaction: ${transaction.trim()}. Amount: ${b.amount}.`,
+    reference,
+  );
+  emit();
+  return { ok: true, data: b };
 }

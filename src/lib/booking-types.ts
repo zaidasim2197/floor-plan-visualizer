@@ -1,4 +1,5 @@
-export type StallCategory = "Premium Island" | "Standard Exhibition Stall" | "Compact Pod" | "Corner Stall";
+export type StallCategory =
+  "Premium Island" | "Standard Exhibition Stall" | "Compact Pod" | "Corner Stall";
 
 export interface Stall {
   id: string;
@@ -15,18 +16,15 @@ export interface Stall {
 }
 
 export type BookingStatus =
-  | "PAYMENT_PENDING"
-  | "PAYMENT_REVIEW"
-  | "CONFIRMED"
-  | "EXPIRED"
-  | "CANCELLED"
-  | "CONFLICT";
+  "PAYMENT_PENDING" | "PAYMENT_REVIEW" | "CONFIRMED" | "EXPIRED" | "CANCELLED" | "CONFLICT";
 
 export type StallStatus = "AVAILABLE" | BookingStatus;
 
-export type PaymentStatus = "UNPAID" | "EVIDENCE_SUBMITTED" | "VERIFIED" | "REFUND_PENDING";
+export type PaymentStatus =
+  "UNPAID" | "EVIDENCE_SUBMITTED" | "VERIFIED" | "REFUND_PENDING" | "REFUNDED";
 
 export interface Booking {
+  eventId: string;
   id: string;
   reference: string;
   stallId: string;
@@ -75,9 +73,9 @@ export const ACTIVE_STATUSES: BookingStatus[] = ["PAYMENT_PENDING", "PAYMENT_REV
 export const statusLabel: Record<StallStatus, string> = {
   AVAILABLE: "Available",
   PAYMENT_PENDING: "On hold",
-  PAYMENT_REVIEW: "On hold",
+  PAYMENT_REVIEW: "Payment review",
   CONFIRMED: "Confirmed",
-  EXPIRED: "Available",
-  CANCELLED: "Available",
-  CONFLICT: "On hold",
+  EXPIRED: "Expired",
+  CANCELLED: "Cancelled",
+  CONFLICT: "Payment conflict",
 };

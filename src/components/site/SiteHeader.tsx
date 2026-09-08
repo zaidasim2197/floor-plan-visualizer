@@ -23,9 +23,15 @@ export function SiteHeader() {
         <Link to="/" className="flex min-w-0 items-center gap-3" onClick={() => setOpen(false)}>
           <BrandLogo className="h-9 w-9" />
           <span className="min-w-0">
-            <span className="hidden sm:block truncate text-sm font-bold tracking-tight">{eventConfig.name}</span>
-            <span className="block sm:hidden truncate text-sm font-bold tracking-tight">VenueFlow Business Expo</span>
-            <span className="block truncate text-[11px] text-muted-foreground">{eventConfig.dateLabel}</span>
+            <span className="hidden sm:block truncate text-sm font-bold tracking-tight">
+              {eventConfig.name}
+            </span>
+            <span className="block sm:hidden truncate text-sm font-bold tracking-tight">
+              {eventConfig.name}
+            </span>
+            <span className="block truncate text-[11px] text-muted-foreground">
+              {eventConfig.dateLabel}
+            </span>
           </span>
         </Link>
 

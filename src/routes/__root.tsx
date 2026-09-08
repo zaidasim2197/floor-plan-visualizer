@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportAppError } from "../lib/app-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { initializeEvents, useEventCatalog } from "@/lib/event-store";
 
 function NotFoundComponent() {
   return (
@@ -130,10 +131,20 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const catalog = useEventCatalog();
+  useEffect(() => {
+    if (!catalog) initializeEvents();
+  }, [catalog]);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      {catalog ? (
+        <Outlet key={`${catalog.activeId}-${catalog.revision}`} />
+      ) : (
+        <div className="p-12 text-center text-muted-foreground" role="status">
+          Loading event workspace…
+        </div>
+      )}
       <Toaster position="top-right" richColors />
     </QueryClientProvider>
   );

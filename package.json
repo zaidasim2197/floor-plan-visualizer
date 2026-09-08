@@ -4,6 +4,7 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
+    "test": "node --test tests/admin-workflows.test.mjs",
     "dev": "vite dev",
     "build": "vite build && node -e \"const fs=require('fs'); if(fs.existsSync('dist')){fs.cpSync('dist','.output/public',{recursive:true});} else if(fs.existsSync('.output/public')){fs.cpSync('.output/public','dist',{recursive:true});}\"",
     "build:dev": "vite build --mode development",

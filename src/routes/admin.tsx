@@ -1,5 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { EventWorkspace, SpaceManagement } from "@/components/site/AdminConfiguration";
+import { BookingDetail, RevenueSummary } from "@/components/site/BookingDetail";
+import { filterBookings, paymentLabels } from "@/lib/admin-data";
+import { activeEventId } from "@/lib/event-store";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { StatusBadge } from "@/components/site/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -25,7 +29,7 @@ import {
 import { FloorMap, FloorMapLegend } from "@/components/site/FloorMap";
 import { eventConfig } from "@/config/event";
 import { stalls } from "@/data/floor-plan";
-import { formatMoney, statusTone } from "@/lib/booking-format";
+import { formatMoney, formatCountdown, statusTone } from "@/lib/booking-format";
 import { cn } from "@/lib/utils";
 import {
   useBookingState,
@@ -140,15 +144,21 @@ function AdminPage() {
               <Lock className="h-6 w-6" />
             </div>
 
-            <h1 className="text-2xl font-extrabold text-center text-foreground">Admin Portal Authentication</h1>
+            <h1 className="text-2xl font-extrabold text-center text-foreground">
+              Admin Portal Authentication
+            </h1>
             <p className="mt-2 text-xs text-center text-muted-foreground">
               Restricted management panel for event organizers and venue managers.
             </p>
 
             <div className="mt-4 rounded-md bg-secondary p-3 text-xs border border-border space-y-1 font-mono">
               <p className="font-bold text-foreground">Demo Access Credentials:</p>
-              <p>Username: <strong className="text-primary">admin</strong></p>
-              <p>Password: <strong className="text-primary">Admin@123</strong></p>
+              <p>
+                Username: <strong className="text-primary">admin</strong>
+              </p>
+              <p>
+                Password: <strong className="text-primary">Admin@123</strong>
+              </p>
             </div>
 
             {authError && (
@@ -210,12 +220,33 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     return () => clearInterval(timer);
   }, []);
 
-  const [activeTab, setActiveTab] = useState<"bookings" | "map" | "emails" | "audit">("bookings");
+  type AdminTab = "bookings" | "spaces" | "map" | "emails" | "audit";
+  const [activeTab, setActiveTab] = useState<AdminTab>(() => {
+    try {
+      const saved = sessionStorage.getItem(`admin-tab-${activeEventId()}`);
+      return saved && ["bookings", "spaces", "map", "emails", "audit"].includes(saved)
+        ? (saved as AdminTab)
+        : "bookings";
+    } catch {
+      return "bookings";
+    }
+  });
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(`admin-tab-${activeEventId()}`, activeTab);
+    } catch {
+      /* Optional UI preference. */
+    }
+  }, [activeTab]);
+  const [paymentFilter, setPaymentFilter] = useState("ALL");
+  const [detailReference, setDetailReference] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
 
   // Modals state
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [selectedBookingRef, setSelectedBookingRef] = useState<string | null>(null);
+  const selectedBooking = state.bookings.find((b) => b.reference === selectedBookingRef) ?? null;
+  const setSelectedBooking = (b: Booking | null) => setSelectedBookingRef(b?.reference ?? null);
   const [proofModalBooking, setProofModalBooking] = useState<Booking | null>(null);
   const [reassignModalOpen, setReassignModalOpen] = useState(false);
   const [newStallTarget, setNewStallTarget] = useState("");
@@ -231,7 +262,9 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [editProduct, setEditProduct] = useState("");
 
   // Manual booking form state
-  const [mbStallId, setMbStallId] = useState("A01");
+  const [mbStallId, setMbStallId] = useState(
+    () => stalls.find((s) => statusMap[s.id] === "AVAILABLE")?.id ?? "",
+  );
   const [mbName, setMbName] = useState("");
   const [mbCompany, setMbCompany] = useState("");
   const [mbEmail, setMbEmail] = useState("");
@@ -246,21 +279,15 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   );
 
   // Filtered booking table
-  const filteredBookings = useMemo(() => {
-    return state.bookings.filter((b) => {
-      if (statusFilter !== "ALL" && b.status !== statusFilter) return false;
-      if (searchTerm.trim()) {
-        const q = searchTerm.toLowerCase();
-        return (
-          b.reference.toLowerCase().includes(q) ||
-          b.customerName.toLowerCase().includes(q) ||
-          b.companyName.toLowerCase().includes(q) ||
-          b.stallId.toLowerCase().includes(q)
-        );
-      }
-      return true;
-    });
-  }, [state.bookings, statusFilter, searchTerm]);
+  const filteredBookings = useMemo(
+    () =>
+      filterBookings(state.bookings, {
+        status: statusFilter,
+        payment: paymentFilter,
+        search: searchTerm,
+      }),
+    [state.bookings, statusFilter, paymentFilter, searchTerm],
+  );
 
   // Handlers
   const handleApprove = (ref: string) => {
@@ -368,7 +395,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               Booking System: Operational
             </span>
             <span className="opacity-30">•</span>
-            <span className="opacity-80">Database: Connected</span>
+            <span className="opacity-80">Demo data · stored in this browser</span>
             <span className="opacity-30">•</span>
             <span className="opacity-80">Notifications: Test Mode</span>
           </div>
@@ -396,16 +423,19 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         {/* TOP HEADER */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Exhibition Operations Dashboard</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+              Event operations
+            </h1>
             <p className="text-xs text-muted-foreground mt-1">
-              Live booking state engine, real-time map synchronization, conflict management & notification audit logs.
+              Your events, spaces and reservations, in one place.
             </p>
           </div>
 
           {/* TABS SELECTOR */}
-          <div className="flex rounded-md border border-border bg-surface p-1 text-xs font-bold">
+          <div className="flex flex-wrap rounded-md border border-border bg-surface p-1 text-xs font-bold">
             {[
               ["bookings", `Bookings (${state.bookings.length})`],
+              ["spaces", "Space management"],
               ["map", "Floor Map View"],
               ["emails", `Email Log (${state.notifications.length})`],
               ["audit", `Audit Trail (${state.audit.length})`],
@@ -413,7 +443,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               <button
                 key={tab}
                 type="button"
-                onClick={() => setActiveTab(tab as any)}
+                onClick={() => setActiveTab(tab as typeof activeTab)}
                 className={`rounded-sm px-3 py-2 transition-colors ${
                   activeTab === tab
                     ? "bg-primary text-primary-foreground shadow-xs"
@@ -426,19 +456,43 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         </div>
 
+        <EventWorkspace />
+        <RevenueSummary bookings={state.bookings} />
+        {activeTab === "spaces" && <SpaceManagement bookings={state.bookings} />}
         {/* METRICS OVERVIEW */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
           {[
             ["Total Spaces", stats.total, "border-border"],
-            ["Available", stats.available, "border-emerald-500/30 text-emerald-700 dark:text-emerald-300"],
-            ["Payment Pending", stats.paymentPending, "border-amber-500/30 text-amber-700 dark:text-amber-300"],
-            ["Payment Review", stats.paymentReview, "border-blue-500/30 text-blue-700 dark:text-blue-300"],
-            ["Confirmed", stats.confirmed, "border-emerald-600/30 text-emerald-800 dark:text-emerald-200"],
+            [
+              "Available",
+              stats.available,
+              "border-emerald-500/30 text-emerald-700 dark:text-emerald-300",
+            ],
+            [
+              "Payment Pending",
+              stats.paymentPending,
+              "border-amber-500/30 text-amber-700 dark:text-amber-300",
+            ],
+            [
+              "Payment Review",
+              stats.paymentReview,
+              "border-blue-500/30 text-blue-700 dark:text-blue-300",
+            ],
+            [
+              "Confirmed",
+              stats.confirmed,
+              "border-emerald-600/30 text-emerald-800 dark:text-emerald-200",
+            ],
             ["Expired", stats.expired, "border-border text-muted-foreground"],
             ["Conflicts", stats.conflicts, "border-red-500/30 text-red-700 dark:text-red-300"],
           ].map(([label, val, borderStyle]) => (
-            <div key={label as string} className={`rounded-lg border bg-card p-3.5 shadow-xs ${borderStyle}`}>
-              <dt className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</dt>
+            <div
+              key={label as string}
+              className={`rounded-lg border bg-card p-3.5 shadow-xs ${borderStyle}`}
+            >
+              <dt className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {label}
+              </dt>
               <dd className="mt-1 text-2xl font-extrabold">{val}</dd>
             </div>
           ))}
@@ -454,7 +508,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   PAYMENT CONFLICT DETECTED ({conflicts.length})
                 </h3>
                 <p className="text-xs text-red-800 dark:text-red-300">
-                  Payment evidence was submitted after a reservation expired. Customer money was received, but space availability may have changed. Manual resolution required.
+                  Payment evidence arrived after a reservation ended. Verify the payment and
+                  availability before confirming or arranging a refund.
                 </p>
               </div>
             </div>
@@ -463,9 +518,15 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               {conflicts.map((c) => {
                 const isStallFree = statusMap[c.stallId] === "AVAILABLE";
                 return (
-                  <div key={c.id} className="pt-3 flex flex-wrap items-center justify-between gap-4 text-xs">
+                  <div
+                    key={c.id}
+                    className="pt-3 flex flex-wrap items-center justify-between gap-4 text-xs"
+                  >
                     <div>
-                      <span className="font-extrabold text-foreground">{c.reference}</span> — Company: <strong>{c.companyName}</strong> ({c.customerName}) | Stall: <strong>{c.stallId}</strong> | Payment Ref: <strong>{c.paymentReference || "N/A"}</strong>
+                      <span className="font-extrabold text-foreground">{c.reference}</span> —
+                      Company: <strong>{c.companyName}</strong> ({c.customerName}) | Stall:{" "}
+                      <strong>{c.stallId}</strong> | Payment Ref:{" "}
+                      <strong>{c.paymentReference || "N/A"}</strong>
                       <p className="text-red-800 dark:text-red-300 mt-0.5">{c.conflictReason}</p>
                     </div>
 
@@ -497,11 +558,11 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         onClick={() =>
                           handleResolveConflictAction(
                             c.reference,
-                            "Refund processed according to policy due to late payment post-expiry.",
+                            "Refund requested; pending manual reconciliation.",
                           )
                         }
                       >
-                        Issue Refund & Cancel
+                        Request refund & cancel
                       </Button>
                     </div>
                   </div>
@@ -519,7 +580,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               <div className="flex flex-1 items-center gap-3 min-w-[240px]">
                 <Search className="h-4 w-4 text-muted-foreground shrink-0" />
                 <Input
-                  placeholder="Search by ID, Customer Name, Company, or Stall..."
+                  aria-label="Search bookings"
+                  placeholder="Search reference, customer, company or email…"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="h-9 text-xs"
@@ -528,8 +590,11 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
               <div className="flex items-center gap-2">
                 <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs font-bold text-muted-foreground uppercase">Status Filter:</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase">
+                  Status Filter:
+                </span>
                 <select
+                  aria-label="Filter by booking status"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="h-9 rounded-md border border-border bg-background px-3 text-xs font-semibold"
@@ -540,10 +605,40 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   <option value="CONFIRMED">Confirmed ({stats.confirmed})</option>
                   <option value="EXPIRED">Expired ({stats.expired})</option>
                   <option value="CONFLICT">Conflict ({stats.conflicts})</option>
+                  <option value="CANCELLED">Cancelled</option>
                 </select>
               </div>
             </div>
 
+            <div className="flex flex-wrap items-center gap-3">
+              <select
+                aria-label="Filter by payment status"
+                value={paymentFilter}
+                onChange={(e) => setPaymentFilter(e.target.value)}
+                className="h-9 rounded-md border border-border bg-background px-3 text-xs"
+              >
+                <option value="ALL">All payment statuses</option>
+                {Object.entries(paymentLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setStatusFilter("ALL");
+                  setPaymentFilter("ALL");
+                  setSearchTerm("");
+                }}
+              >
+                Clear filters
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                {filteredBookings.length} matching bookings
+              </span>
+            </div>
             {/* TABLE */}
             <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-xs">
               <table className="w-full min-w-[840px] text-left text-xs">
@@ -569,19 +664,33 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     filteredBookings.map((b) => (
                       <tr key={b.id} className="hover:bg-secondary/40">
                         <td className="px-4 py-3 font-extrabold text-foreground">
-                          {b.reference}
+                          <button
+                            className="text-primary hover:underline"
+                            onClick={() => setDetailReference(b.reference)}
+                            aria-label={`View booking ${b.reference}`}
+                          >
+                            {b.reference}
+                          </button>
                           <span className="block text-[10px] font-normal text-muted-foreground">
-                            {new Date(b.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            {new Date(b.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </span>
                         </td>
                         <td className="px-4 py-3 font-bold text-foreground">{b.stallId}</td>
                         <td className="px-4 py-3">
                           <p className="font-semibold text-foreground">{b.companyName}</p>
-                          <p className="text-[11px] text-muted-foreground">{b.customerName} · {b.phone}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {b.customerName} · {b.phone}
+                          </p>
                         </td>
                         <td className="px-4 py-3 font-semibold">{formatMoney(b.amount)}</td>
                         <td className="px-4 py-3 font-mono text-muted-foreground">
                           <div>{b.paymentReference || "—"}</div>
+                          <div className="mt-1 font-sans text-[10px]">
+                            {paymentLabels[b.paymentStatus]}
+                          </div>
                           {b.paymentProofImage && (
                             <button
                               type="button"
@@ -597,6 +706,15 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         </td>
                         <td className="px-4 py-3">
                           <AdminStatusBadge status={b.status} />
+                          <p className="mt-1 text-[10px] text-muted-foreground">
+                            {b.status === "PAYMENT_PENDING"
+                              ? `${formatCountdown(b.expiresAt - Date.now())} remaining`
+                              : b.status === "PAYMENT_REVIEW"
+                                ? "Protected during review"
+                                : b.status === "EXPIRED"
+                                  ? "Hold ended"
+                                  : ""}
+                          </p>
                         </td>
                         <td className="px-4 py-3 text-right space-x-1">
                           {(b.status === "PAYMENT_PENDING" || b.status === "PAYMENT_REVIEW") && (
@@ -657,24 +775,39 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         {activeTab === "map" && (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
             <div>
-              <FloorMap isAdminView={true} statusMap={statusMap} selectedId={selectedBooking?.stallId ?? null} onSelect={(s) => {
-                const found = state.bookings.find((b) => b.stallId === s.id && (b.status === "CONFIRMED" || b.status === "PAYMENT_PENDING" || b.status === "PAYMENT_REVIEW"));
-                if (found) setSelectedBooking(found);
-                else {
-                  setMbStallId(s.id);
-                  setManualBookingModalOpen(true);
-                }
-              }} />
+              <FloorMap
+                isAdminView={true}
+                statusMap={statusMap}
+                selectedId={selectedBooking?.stallId ?? null}
+                onSelect={(s) => {
+                  const found = state.bookings.find(
+                    (b) =>
+                      b.stallId === s.id &&
+                      (b.status === "CONFIRMED" ||
+                        b.status === "PAYMENT_PENDING" ||
+                        b.status === "PAYMENT_REVIEW"),
+                  );
+                  if (found) setSelectedBooking(found);
+                  else {
+                    setMbStallId(s.id);
+                    setManualBookingModalOpen(true);
+                  }
+                }}
+              />
               <FloorMapLegend className="mt-4" />
             </div>
 
             <div className="rounded-xl border border-border bg-card p-5 shadow-xs text-xs space-y-4">
-              <h3 className="text-sm font-bold text-foreground border-b border-border pb-2">Admin Stall Inspector</h3>
+              <h3 className="text-sm font-bold text-foreground border-b border-border pb-2">
+                Admin Stall Inspector
+              </h3>
               {selectedBooking ? (
                 <div className="space-y-3">
                   <div>
                     <span className="text-muted-foreground">Space Number</span>
-                    <p className="text-lg font-extrabold text-foreground">{selectedBooking.stallId}</p>
+                    <p className="text-lg font-extrabold text-foreground">
+                      {selectedBooking.stallId}
+                    </p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Booking Reference</span>
@@ -686,11 +819,15 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   </div>
                   <div>
                     <span className="text-muted-foreground">Customer Contact</span>
-                    <p className="font-semibold text-foreground">{selectedBooking.customerName} ({selectedBooking.phone})</p>
+                    <p className="font-semibold text-foreground">
+                      {selectedBooking.customerName} ({selectedBooking.phone})
+                    </p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Current Status</span>
-                    <div className="mt-1"><AdminStatusBadge status={selectedBooking.status} /></div>
+                    <div className="mt-1">
+                      <AdminStatusBadge status={selectedBooking.status} />
+                    </div>
                   </div>
 
                   {selectedBooking.paymentProofImage && (
@@ -722,18 +859,26 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
                   <div className="pt-3 border-t border-border space-y-2">
                     {selectedBooking.status !== "CONFIRMED" && (
-                      <Button className="w-full h-8 text-xs font-bold bg-emerald-600" onClick={() => handleApprove(selectedBooking.reference)}>
+                      <Button
+                        className="w-full h-8 text-xs font-bold bg-emerald-600"
+                        onClick={() => handleApprove(selectedBooking.reference)}
+                      >
                         Approve & Confirm Stall
                       </Button>
                     )}
-                    <Button variant="outline" className="w-full h-8 text-xs font-bold" onClick={() => handleOpenEdit(selectedBooking)}>
+                    <Button
+                      variant="outline"
+                      className="w-full h-8 text-xs font-bold"
+                      onClick={() => handleOpenEdit(selectedBooking)}
+                    >
                       Edit Customer Info
                     </Button>
                   </div>
                 </div>
               ) : (
                 <p className="text-muted-foreground">
-                  Click any stall on the map to inspect its active booking or manually create a new reservation.
+                  Click any stall on the map to inspect its active booking or manually create a new
+                  reservation.
                 </p>
               )}
             </div>
@@ -745,7 +890,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           <div className="space-y-4">
             <h2 className="text-lg font-bold text-foreground">Generated Email Notifications Log</h2>
             <p className="text-xs text-muted-foreground">
-              All automated transaction emails dispatched to admins and customers during booking lifecycle.
+              All automated transaction emails dispatched to admins and customers during booking
+              lifecycle.
             </p>
 
             <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-xs">
@@ -763,17 +909,29 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   {state.notifications.map((n) => (
                     <tr key={n.id} className="hover:bg-secondary/40">
                       <td className="px-4 py-3">
-                        <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                          n.audience === "ADMIN" ? "bg-purple-500/10 text-purple-700" : "bg-blue-500/10 text-blue-700"
-                        }`}>
+                        <span
+                          className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                            n.audience === "ADMIN"
+                              ? "bg-purple-500/10 text-purple-700"
+                              : "bg-blue-500/10 text-blue-700"
+                          }`}
+                        >
                           {n.audience}
                         </span>
                       </td>
                       <td className="px-4 py-3 font-medium text-foreground">{n.recipient}</td>
-                      <td className="px-4 py-3 font-semibold text-foreground max-w-xs truncate">{n.subject}</td>
-                      <td className="px-4 py-3 font-mono text-muted-foreground">{n.bookingRef || "—"}</td>
+                      <td className="px-4 py-3 font-semibold text-foreground max-w-xs truncate">
+                        {n.subject}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground">
+                        {n.bookingRef || "—"}
+                      </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(n.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                        {new Date(n.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}
                       </td>
                     </tr>
                   ))}
@@ -827,7 +985,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           <DialogHeader>
             <DialogTitle>Reassign Booking Location</DialogTitle>
             <DialogDescription>
-              Move booking <strong>{selectedBooking?.reference}</strong> ({selectedBooking?.companyName}) to a different available space.
+              Move booking <strong>{selectedBooking?.reference}</strong> (
+              {selectedBooking?.companyName}) to a different available space.
             </DialogDescription>
           </DialogHeader>
 
@@ -850,8 +1009,12 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReassignModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleExecuteReassign} disabled={!newStallTarget}>Execute Reassignment</Button>
+            <Button variant="outline" onClick={() => setReassignModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleExecuteReassign} disabled={!newStallTarget}>
+              Execute Reassignment
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -862,31 +1025,65 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           <DialogHeader>
             <DialogTitle>Edit Booking Details</DialogTitle>
             <DialogDescription>
-              Update contact or company details for reference <strong>{selectedBooking?.reference}</strong>.
+              Update contact or company details for reference{" "}
+              <strong>{selectedBooking?.reference}</strong>.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleExecuteEdit} className="space-y-4 py-2 text-xs">
             <div className="space-y-1">
               <Label htmlFor="edit-name">Customer Name</Label>
-              <Input id="edit-name" value={editName} onChange={(e) => setEditName(e.target.value)} required />
+              <Input
+                id="edit-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                required
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="edit-company">Company Name</Label>
-              <Input id="edit-company" value={editCompany} onChange={(e) => setEditCompany(e.target.value)} required />
+              <Input
+                id="edit-company"
+                value={editCompany}
+                onChange={(e) => setEditCompany(e.target.value)}
+                required
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="edit-email">Email Address</Label>
-              <Input id="edit-email" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required />
+              <Input
+                id="edit-email"
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                required
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="edit-phone">Phone Number</Label>
-              <Input id="edit-phone" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} required />
+              <Input
+                id="edit-phone"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="edit-product">Product / service</Label>
+              <Input
+                id="edit-product"
+                value={editProduct}
+                onChange={(e) => setEditProduct(e.target.value)}
+              />
             </div>
 
             <DialogFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={() => setEditModalOpen(false)}>Cancel</Button>
-              <Button type="submit" className="font-bold">Save Changes</Button>
+              <Button type="button" variant="outline" onClick={() => setEditModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="font-bold">
+                Save Changes
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -898,13 +1095,20 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           <DialogHeader>
             <DialogTitle>Release Space Confirmation</DialogTitle>
             <DialogDescription>
-              Are you sure you want to release space <strong>{selectedBooking?.stallId}</strong> held by <strong>{selectedBooking?.companyName}</strong>? The space will instantly return to AVAILABLE.
+              Are you sure you want to release space <strong>{selectedBooking?.stallId}</strong>{" "}
+              held by <strong>{selectedBooking?.companyName}</strong>? The space will instantly
+              return to AVAILABLE.
             </DialogDescription>
           </DialogHeader>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReleaseConfirmOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => selectedBooking && handleRelease(selectedBooking.reference)}>
+            <Button variant="outline" onClick={() => setReleaseConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => selectedBooking && handleRelease(selectedBooking.reference)}
+            >
               Confirm Release
             </Button>
           </DialogFooter>
@@ -917,7 +1121,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           <DialogHeader>
             <DialogTitle>Add Manual Admin Booking</DialogTitle>
             <DialogDescription>
-              Create a direct booking for an exhibitor. Double-booking protection rules strictly enforced.
+              Create a direct booking for an exhibitor. Double-booking protection rules strictly
+              enforced.
             </DialogDescription>
           </DialogHeader>
 
@@ -940,28 +1145,53 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
             <div className="space-y-1">
               <Label htmlFor="mb-name">Customer Name *</Label>
-              <Input id="mb-name" required value={mbName} onChange={(e) => setMbName(e.target.value)} />
+              <Input
+                id="mb-name"
+                required
+                value={mbName}
+                onChange={(e) => setMbName(e.target.value)}
+              />
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="mb-company">Company Name *</Label>
-              <Input id="mb-company" required value={mbCompany} onChange={(e) => setMbCompany(e.target.value)} />
+              <Input
+                id="mb-company"
+                required
+                value={mbCompany}
+                onChange={(e) => setMbCompany(e.target.value)}
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label htmlFor="mb-email">Email *</Label>
-                <Input id="mb-email" type="email" required value={mbEmail} onChange={(e) => setMbEmail(e.target.value)} />
+                <Input
+                  id="mb-email"
+                  type="email"
+                  required
+                  value={mbEmail}
+                  onChange={(e) => setMbEmail(e.target.value)}
+                />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="mb-phone">Phone *</Label>
-                <Input id="mb-phone" required value={mbPhone} onChange={(e) => setMbPhone(e.target.value)} />
+                <Input
+                  id="mb-phone"
+                  required
+                  value={mbPhone}
+                  onChange={(e) => setMbPhone(e.target.value)}
+                />
               </div>
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="mb-product">Product / Category</Label>
-              <Input id="mb-product" value={mbProduct} onChange={(e) => setMbProduct(e.target.value)} />
+              <Input
+                id="mb-product"
+                value={mbProduct}
+                onChange={(e) => setMbProduct(e.target.value)}
+              />
             </div>
 
             <div className="space-y-1">
@@ -973,21 +1203,37 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 <SelectContent>
                   <SelectItem value="CONFIRMED">CONFIRMED (Payment Verified)</SelectItem>
                   <SelectItem value="PAYMENT_REVIEW">PAYMENT_REVIEW (Under Review)</SelectItem>
-                  <SelectItem value="PAYMENT_PENDING">PAYMENT_PENDING (30-Min Hold)</SelectItem>
+                  <SelectItem value="PAYMENT_PENDING">
+                    PAYMENT_PENDING ({eventConfig.booking.paymentPendingMinutes}-Min Hold)
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <DialogFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={() => setManualBookingModalOpen(false)}>Cancel</Button>
-              <Button type="submit" className="font-bold">Create Booking</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setManualBookingModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className="font-bold">
+                Create Booking
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
+      {detailReference && (
+        <BookingDetail reference={detailReference} onClose={() => setDetailReference(null)} />
+      )}
       {/* PAYMENT PROOF RECEIPT LIGHTBOX DIALOG */}
-      <Dialog open={Boolean(proofModalBooking)} onOpenChange={(val) => !val && setProofModalBooking(null)}>
+      <Dialog
+        open={Boolean(proofModalBooking)}
+        onOpenChange={(val) => !val && setProofModalBooking(null)}
+      >
         <DialogContent className="max-w-2xl max-h-[92vh] flex flex-col overflow-y-auto bg-card border-border p-5 sm:p-6 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-thumb]:rounded-full">
           <DialogHeader className="shrink-0 pr-6 sm:pr-8">
             <div className="flex items-center justify-between gap-3">
@@ -1000,7 +1246,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               Payment Deposit Receipt — Space {proofModalBooking?.stallId}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-              Submitted by <strong>{proofModalBooking?.companyName}</strong> ({proofModalBooking?.customerName} · {proofModalBooking?.phone})
+              Submitted by <strong>{proofModalBooking?.companyName}</strong> (
+              {proofModalBooking?.customerName} · {proofModalBooking?.phone})
             </DialogDescription>
           </DialogHeader>
 
@@ -1015,9 +1262,22 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               </div>
 
               <div className="rounded-lg bg-secondary p-3 text-xs font-mono space-y-1 border border-border shrink-0">
-                <p>Transaction Reference: <strong className="text-foreground">{proofModalBooking.paymentReference || "N/A"}</strong></p>
-                <p>Exhibitor Email: <strong className="text-foreground">{proofModalBooking.email}</strong></p>
-                <p>Amount Required: <strong className="text-emerald-600">{formatMoney(proofModalBooking.amount)}</strong></p>
+                <p>
+                  Transaction Reference:{" "}
+                  <strong className="text-foreground">
+                    {proofModalBooking.paymentReference || "N/A"}
+                  </strong>
+                </p>
+                <p>
+                  Exhibitor Email:{" "}
+                  <strong className="text-foreground">{proofModalBooking.email}</strong>
+                </p>
+                <p>
+                  Amount Required:{" "}
+                  <strong className="text-emerald-600">
+                    {formatMoney(proofModalBooking.amount)}
+                  </strong>
+                </p>
               </div>
             </div>
           )}
@@ -1032,10 +1292,15 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   setProofModalBooking(null);
                 }}
               >
-                <CheckCircle2 className="mr-1.5 h-4 w-4" /> Verify & Approve Space {proofModalBooking.stallId}
+                <CheckCircle2 className="mr-1.5 h-4 w-4" /> Verify & Approve Space{" "}
+                {proofModalBooking.stallId}
               </Button>
             )}
-            <Button variant="outline" onClick={() => setProofModalBooking(null)} className="h-10 text-xs font-bold">
+            <Button
+              variant="outline"
+              onClick={() => setProofModalBooking(null)}
+              className="h-10 text-xs font-bold"
+            >
               Close Viewer
             </Button>
           </DialogFooter>

@@ -100,8 +100,13 @@ export function BookStallPage() {
   const handleProofImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 8 * 1024 * 1024) {
-      toast.error("File size is too large. Please select an image under 8MB.");
+    setProofImageBase64(null);
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      toast.error("Choose a PNG, JPEG or WebP image.");
+      return;
+    }
+    if (file.size > 1000000) {
+      toast.error("File size is too large. Please select an image under 1MB.");
       return;
     }
     const reader = new FileReader();
@@ -182,7 +187,9 @@ export function BookStallPage() {
         <div className="mx-auto max-w-md py-20 px-4 text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
           <h1 className="mt-4 text-xl font-bold">Space Not Found</h1>
-          <p className="mt-2 text-sm text-muted-foreground">The space ID "{stallId}" does not exist in the floor plan.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The space ID "{stallId}" does not exist in the floor plan.
+          </p>
           <Button asChild className="mt-6 font-bold">
             <Link to="/floor-plan">Back to Floor Plan</Link>
           </Button>
@@ -243,7 +250,7 @@ export function BookStallPage() {
       m_payment_id: currentBooking.reference,
       amount: currentBooking.amount.toFixed(2),
       item_name: `VenueFlow Expo Space Booking - Space ${currentBooking.stallId}`,
-      item_description: `Exhibition Space Rental for VenueFlow Business Expo 2027 (${currentBooking.companyName})`,
+      item_description: `Exhibition Space Rental for ${eventConfig.name} (${currentBooking.companyName})`,
     };
 
     toast.loading("Redirecting to PayFast Payment Gateway...");
@@ -352,15 +359,22 @@ export function BookStallPage() {
     if (!currentBooking) return;
 
     if (!paymentRefInput.trim() && !proofImageBase64) {
-      toast.error("Please upload a payment receipt image or enter your transaction reference number.");
+      toast.error(
+        "Please upload a payment receipt image or enter your transaction reference number.",
+      );
       return;
     }
 
     setSubmittingPayment(true);
 
     setTimeout(() => {
-      const dummyRef = paymentRefInput.trim() || `TRX-PROOF-${Math.floor(100000 + Math.random() * 900000)}`;
-      const res = submitPaymentEvidence(currentBooking.reference, dummyRef, proofImageBase64 || undefined);
+      const dummyRef =
+        paymentRefInput.trim() || `TRX-PROOF-${Math.floor(100000 + Math.random() * 900000)}`;
+      const res = submitPaymentEvidence(
+        currentBooking.reference,
+        dummyRef,
+        proofImageBase64 || undefined,
+      );
       setSubmittingPayment(false);
 
       if (res.ok) {
@@ -397,7 +411,9 @@ export function BookStallPage() {
             </div>
             <div className="flex items-center gap-3">
               <span className="text-sm font-semibold text-muted-foreground">Price:</span>
-              <span className="text-xl font-extrabold text-foreground">{formatMoney(stall.price)}</span>
+              <span className="text-xl font-extrabold text-foreground">
+                {formatMoney(stall.price)}
+              </span>
             </div>
           </div>
         </div>
@@ -411,8 +427,12 @@ export function BookStallPage() {
             <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
                 <div>
-                  <span className="text-xs font-bold text-muted-foreground uppercase">Booking Reference</span>
-                  <p className="text-2xl font-extrabold tracking-tight text-foreground">{currentBooking.reference}</p>
+                  <span className="text-xs font-bold text-muted-foreground uppercase">
+                    Booking Reference
+                  </span>
+                  <p className="text-2xl font-extrabold tracking-tight text-foreground">
+                    {currentBooking.reference}
+                  </p>
                 </div>
                 <StatusBadge status={currentBooking.status} />
               </div>
@@ -452,7 +472,8 @@ export function BookStallPage() {
                         30-Minute Temporary Hold Active
                       </p>
                       <p className="text-xs text-amber-800 dark:text-amber-400">
-                        Space {stall.stallNumber} is locked for your session. Complete payment before expiration.
+                        Space {stall.stallNumber} is locked for your session. Complete payment
+                        before expiration.
                       </p>
                     </div>
                   </div>
@@ -470,7 +491,9 @@ export function BookStallPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-5 w-5 text-primary" />
-                      <h2 className="text-lg font-bold text-foreground">Online Payment Gateway & Card Checkout</h2>
+                      <h2 className="text-lg font-bold text-foreground">
+                        Online Payment Gateway & Card Checkout
+                      </h2>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Select your preferred sandbox gateway or test via direct simulated card form.
@@ -529,14 +552,19 @@ export function BookStallPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                          <h3 className="text-sm font-bold text-foreground">PayFast Official Sandbox Integration</h3>
+                          <h3 className="text-sm font-bold text-foreground">
+                            PayFast Official Sandbox Integration
+                          </h3>
                         </div>
                         <span className="rounded-md bg-emerald-600/20 px-2.5 py-0.5 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300">
                           Merchant ID: {eventConfig.payfast.merchantId}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        Clicking below will securely POST your booking reference (<strong>{currentBooking.reference}</strong>) and rental amount (<strong>{formatMoney(currentBooking.amount)}</strong>) to the official PayFast Sandbox Gateway environment.
+                        Clicking below will securely POST your booking reference (
+                        <strong>{currentBooking.reference}</strong>) and rental amount (
+                        <strong>{formatMoney(currentBooking.amount)}</strong>) to the official
+                        PayFast Sandbox Gateway environment.
                       </p>
                     </div>
 
@@ -544,7 +572,8 @@ export function BookStallPage() {
                       onClick={handlePayFastRedirect}
                       className="w-full h-13 text-base font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 shadow-md"
                     >
-                      <Lock className="mr-2 h-5 w-5" /> Pay {formatMoney(currentBooking.amount)} via PayFast Gateway <ExternalLink className="ml-2 h-4 w-4" />
+                      <Lock className="mr-2 h-5 w-5" /> Pay {formatMoney(currentBooking.amount)} via
+                      PayFast Gateway <ExternalLink className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
                 )}
@@ -611,7 +640,8 @@ export function BookStallPage() {
                         <p className="font-bold text-blue-950 dark:text-blue-100 uppercase tracking-wide">
                           DIRECT SIMULATED CHECKOUT MODE
                         </p>
-                        No real credit card will be charged. Test card payment directly on this page.
+                        No real credit card will be charged. Test card payment directly on this
+                        page.
                       </div>
                     </div>
 
@@ -679,7 +709,8 @@ export function BookStallPage() {
                       >
                         {processingCard ? (
                           <span className="flex items-center gap-2">
-                            <RefreshCw className="h-4 w-4 animate-spin" /> Processing Payment Gateway...
+                            <RefreshCw className="h-4 w-4 animate-spin" /> Processing Payment
+                            Gateway...
                           </span>
                         ) : (
                           `Pay ${formatMoney(currentBooking.amount)} & Confirm Space ${stall.stallNumber}`
@@ -697,10 +728,13 @@ export function BookStallPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <Building2 className="h-5 w-5 text-primary" />
-                    <h2 className="text-lg font-bold text-foreground">Direct Bank Deposit / Transfer Instructions</h2>
+                    <h2 className="text-lg font-bold text-foreground">
+                      Direct Bank Deposit / Transfer Instructions
+                    </h2>
                   </div>
                   <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-                    Transfer <strong>{formatMoney(currentBooking.amount)}</strong> to our official bank account within 30 minutes to confirm your space.
+                    Transfer <strong>{formatMoney(currentBooking.amount)}</strong> to our official
+                    bank account within 30 minutes to confirm your space.
                   </p>
                 </div>
 
@@ -732,12 +766,18 @@ export function BookStallPage() {
                 <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-5 space-y-3">
                   <div className="flex items-center gap-2">
                     <Send className="h-5 w-5 text-emerald-600" />
-                    <h4 className="text-sm font-bold text-foreground">Send Receipt Screenshot via WhatsApp</h4>
+                    <h4 className="text-sm font-bold text-foreground">
+                      Send Receipt Screenshot via WhatsApp
+                    </h4>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    After making the bank transfer, send your receipt screenshot directly to our organizing team on WhatsApp for fast verification.
+                    After making the bank transfer, send your receipt screenshot directly to our
+                    organizing team on WhatsApp for fast verification.
                   </p>
-                  <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold h-11">
+                  <Button
+                    asChild
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold h-11"
+                  >
                     <a
                       href={whatsappLink(
                         eventConfig.contact.whatsapp[0],
@@ -756,9 +796,12 @@ export function BookStallPage() {
                   <div className="flex items-center gap-2">
                     <UploadCloud className="h-5 w-5 text-primary shrink-0" />
                     <div>
-                      <h4 className="text-sm font-bold text-foreground">Upload Payment Proof Receipt / Deposit Slip</h4>
+                      <h4 className="text-sm font-bold text-foreground">
+                        Upload Payment Proof Receipt / Deposit Slip
+                      </h4>
                       <p className="text-xs text-muted-foreground">
-                        If you prefer not to use WhatsApp, upload your bank transfer deposit receipt or screenshot directly below.
+                        If you prefer not to use WhatsApp, upload your bank transfer deposit receipt
+                        or screenshot directly below.
                       </p>
                     </div>
                   </div>
@@ -768,7 +811,7 @@ export function BookStallPage() {
                     <div className="relative rounded-lg border-2 border-dashed border-border hover:border-primary bg-background/80 p-5 text-center transition-all cursor-pointer">
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/png,image/jpeg,image/webp"
                         onChange={handleProofImageChange}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                       />
@@ -805,7 +848,7 @@ export function BookStallPage() {
                             Click or drag payment screenshot / bank deposit slip image here
                           </p>
                           <p className="text-[11px] text-muted-foreground">
-                            Supports PNG, JPG, JPEG, WEBP (Max size: 8MB)
+                            Supports PNG, JPG, JPEG, WEBP (Max size: 1MB)
                           </p>
                         </div>
                       )}
@@ -849,15 +892,20 @@ export function BookStallPage() {
             {currentBooking.status === "PAYMENT_REVIEW" && (
               <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-8 text-center space-y-4">
                 <CheckCircle2 className="mx-auto h-14 w-14 text-blue-600" />
-                <h2 className="text-xl font-bold text-foreground">Payment Proof Submitted & Under Review</h2>
+                <h2 className="text-xl font-bold text-foreground">
+                  Payment Proof Submitted & Under Review
+                </h2>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  Thank you! Your payment proof and reference (<strong>{currentBooking.paymentReference}</strong>) have been submitted. Your space hold is protected while VenueFlow Events organizers verify the payment.
+                  Thank you! Your payment proof and reference (
+                  <strong>{currentBooking.paymentReference}</strong>) have been submitted. Your
+                  space hold is protected while VenueFlow Events organizers verify the payment.
                 </p>
 
                 {currentBooking.paymentProofImage && (
                   <div className="max-w-sm mx-auto rounded-lg border border-border bg-card p-3.5 shadow-md space-y-2 text-left">
                     <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                      <ImageIcon className="h-4 w-4 text-primary" /> Submitted Payment Receipt Image:
+                      <ImageIcon className="h-4 w-4 text-primary" /> Submitted Payment Receipt
+                      Image:
                     </p>
                     <div className="rounded border border-border overflow-hidden bg-slate-950 p-1">
                       <img
@@ -892,7 +940,9 @@ export function BookStallPage() {
                     Payment Successful & Space Confirmed!
                   </h2>
                   <p className="mt-2 text-sm text-muted-foreground max-w-lg mx-auto">
-                    Congratulations! Exhibition Space <strong>{currentBooking.stallId}</strong> is officially booked for <strong>{currentBooking.companyName}</strong> at {eventConfig.name}.
+                    Congratulations! Exhibition Space <strong>{currentBooking.stallId}</strong> is
+                    officially booked for <strong>{currentBooking.companyName}</strong> at{" "}
+                    {eventConfig.name}.
                   </p>
                 </div>
 
@@ -900,7 +950,9 @@ export function BookStallPage() {
                 <div className="rounded-lg border border-border bg-card p-5 text-left max-w-md mx-auto space-y-3 text-xs sm:text-sm">
                   <div className="flex justify-between border-b border-border pb-2">
                     <span className="text-muted-foreground">Booking ID</span>
-                    <span className="font-mono font-bold text-primary">{currentBooking.reference}</span>
+                    <span className="font-mono font-bold text-primary">
+                      {currentBooking.reference}
+                    </span>
                   </div>
                   <div className="flex justify-between border-b border-border pb-2">
                     <span className="text-muted-foreground">Exhibitor</span>
@@ -912,7 +964,9 @@ export function BookStallPage() {
                   </div>
                   <div className="flex justify-between border-b border-border pb-2">
                     <span className="text-muted-foreground">Space Assigned</span>
-                    <span className="font-bold text-foreground">Space {currentBooking.stallId}</span>
+                    <span className="font-bold text-foreground">
+                      Space {currentBooking.stallId}
+                    </span>
                   </div>
                   <div className="flex justify-between border-b border-border pb-2">
                     <span className="text-muted-foreground">Event Date</span>
@@ -924,7 +978,9 @@ export function BookStallPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Payment Reference</span>
-                    <span className="font-mono font-bold text-foreground">{currentBooking.paymentReference || "ONLINE-CARD"}</span>
+                    <span className="font-mono font-bold text-foreground">
+                      {currentBooking.paymentReference || "ONLINE-CARD"}
+                    </span>
                   </div>
                 </div>
 
@@ -949,7 +1005,9 @@ export function BookStallPage() {
                 <AlertCircle className="mx-auto h-14 w-14 text-destructive" />
                 <h2 className="text-xl font-bold text-foreground">Reservation Expired</h2>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  Your 30-minute temporary hold for space <strong>{currentBooking.stallId}</strong> has expired. The space has been released back to the floor plan for other exhibitors.
+                  Your 30-minute temporary hold for space <strong>{currentBooking.stallId}</strong>{" "}
+                  has expired. The space has been released back to the floor plan for other
+                  exhibitors.
                 </p>
                 <div className="pt-4">
                   <Button asChild className="font-bold">
@@ -988,7 +1046,9 @@ export function BookStallPage() {
                   </div>
                   <div className="flex justify-between border-t border-border pt-3">
                     <dt className="font-bold text-foreground">Total Fee</dt>
-                    <dd className="text-xl font-extrabold text-primary">{formatMoney(stall.price)}</dd>
+                    <dd className="text-xl font-extrabold text-primary">
+                      {formatMoney(stall.price)}
+                    </dd>
                   </div>
                 </dl>
               </div>
@@ -998,7 +1058,10 @@ export function BookStallPage() {
                   <ShieldCheck className="h-4 w-4 text-emerald-600" /> Hold Protection Guarantee
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Submitting this form immediately reserves space <strong>{stall.stallNumber}</strong> for {eventConfig.booking.paymentPendingMinutes} minutes. Concurrent users are strictly blocked from double booking.
+                  Submitting this form immediately reserves space{" "}
+                  <strong>{stall.stallNumber}</strong> for{" "}
+                  {eventConfig.booking.paymentPendingMinutes} minutes. Concurrent users are strictly
+                  blocked from double booking.
                 </p>
               </div>
             </div>
@@ -1006,9 +1069,12 @@ export function BookStallPage() {
             {/* RIGHT FORM */}
             <div className="lg:col-span-7">
               <div className="rounded-xl border border-border bg-card p-6 sm:p-8 shadow-xs">
-                <h2 className="text-xl sm:text-2xl font-extrabold text-foreground">Exhibitor Registration & Booking</h2>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-foreground">
+                  Exhibitor Registration & Booking
+                </h2>
                 <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-                  Provide your organization contact details and select your preferred payment method.
+                  Provide your organization contact details and select your preferred payment
+                  method.
                 </p>
 
                 {error && (
@@ -1081,7 +1147,9 @@ export function BookStallPage() {
 
                   {/* PAYMENT METHOD SELECTION TOGGLE */}
                   <div className="space-y-3 pt-2">
-                    <Label className="text-sm font-bold text-foreground">Select Payment Method *</Label>
+                    <Label className="text-sm font-bold text-foreground">
+                      Select Payment Method *
+                    </Label>
                     <div className="grid gap-3 sm:grid-cols-2">
                       {/* OPTION 1: PAYFAST */}
                       <label
@@ -1184,12 +1252,20 @@ export function BookStallPage() {
                       checked={terms}
                       onCheckedChange={(checked) => setTerms(Boolean(checked))}
                     />
-                    <Label htmlFor="terms" className="text-xs leading-normal text-muted-foreground cursor-pointer">
-                      I agree to the Exhibition Terms & Conditions and understand that space hold is valid for {eventConfig.booking.paymentPendingMinutes} minutes.
+                    <Label
+                      htmlFor="terms"
+                      className="text-xs leading-normal text-muted-foreground cursor-pointer"
+                    >
+                      I agree to the Exhibition Terms & Conditions and understand that space hold is
+                      valid for {eventConfig.booking.paymentPendingMinutes} minutes.
                     </Label>
                   </div>
 
-                  <Button type="submit" className="w-full h-11 font-extrabold text-sm" disabled={submitting}>
+                  <Button
+                    type="submit"
+                    className="w-full h-11 font-extrabold text-sm"
+                    disabled={submitting}
+                  >
                     {submitting
                       ? "Reserving Space..."
                       : paymentMethod === "PAYFAST"
