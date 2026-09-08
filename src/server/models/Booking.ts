@@ -94,7 +94,8 @@ BookingSchema.index(
 );
 
 BookingSchema.index({ eventId: 1, status: 1 });
-BookingSchema.index({ reference: 1 });
+// Remove the duplicate schema.index() since we already have unique:true on the field
+// BookingSchema.index({ reference: 1 }); — covered by unique: true on the field definition
 BookingSchema.index({ eventId: 1, expiresAt: 1, status: 1 });
 
 export const Booking = (models["Booking"] ?? model<IBooking>("Booking", BookingSchema)) as ReturnType<typeof model<IBooking>>;

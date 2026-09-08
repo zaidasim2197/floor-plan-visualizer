@@ -10,7 +10,11 @@ export async function connectDB(): Promise<typeof mongoose> {
   if (!uri) throw new Error("MONGODB_URI environment variable is not set.");
 
   connectionPromise = mongoose
-    .connect(uri, { dbName: process.env["MONGODB_DB"] ?? "venueflow" })
+    .connect(uri, {
+      dbName: process.env["MONGODB_DB"] ?? "venueflow",
+      serverSelectionTimeoutMS: 5000, // fail fast in dev if no DB is running
+      connectTimeoutMS: 5000,
+    })
     .then((m) => {
       console.log("[db] MongoDB connected");
       return m;
