@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/routes/api/**/*.ts", "src/server/**/*.ts"],
+  "exclude": [],
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "noImplicitReturns": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false,
+    "noUncheckedSideEffectImports": false,
+    "moduleResolution": "Bundler"
+  }
+}

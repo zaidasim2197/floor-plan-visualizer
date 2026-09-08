@@ -12,4 +12,11 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    ssr: {
+      // CJS packages that must be treated as Node externals in the SSR/server
+      // route environment — Vite's ESM module runner cannot inline-transform them.
+      external: ["mongoose", "bcryptjs", "jsonwebtoken"],
+    },
+  },
 });

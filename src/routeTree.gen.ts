@@ -17,6 +17,44 @@ import { Route as ConfirmRouteImport } from './routes/confirm'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FloorPlanRouteImport } from './routes/floor-plan'
 import { Route as BookStallIdRouteImport } from './routes/book.$stallId'
+import { Route as ApiV1UploadsPaymentProofRouteImport } from './routes/api/v1/uploads/payment-proof'
+import { Route as ApiV1WebhooksPayfastRouteImport } from './routes/api/v1/webhooks/payfast'
+import { Route as ApiV1WebhooksSafepayRouteImport } from './routes/api/v1/webhooks/safepay'
+import { Route as ApiV1WebhooksSimulatedRouteImport } from './routes/api/v1/webhooks/simulated'
+import { Route as ApiV1AdminAuthLoginRouteImport } from './routes/api/v1/admin/auth/login'
+import { Route as ApiV1AdminAuthLogoutRouteImport } from './routes/api/v1/admin/auth/logout'
+import { Route as ApiV1AdminAuthRefreshRouteImport } from './routes/api/v1/admin/auth/refresh'
+import { Route as ApiV1AdminEventsIndexRouteImport } from './routes/api/v1/admin/events/index'
+import { Route as ApiV1AdminUsersIndexRouteImport } from './routes/api/v1/admin/users/index'
+import { Route as ApiV1AdminUsersUserIdRouteImport } from './routes/api/v1/admin/users/$userId'
+import { Route as ApiV1EventsEventSlugIndexRouteImport } from './routes/api/v1/events/$eventSlug/index'
+import { Route as ApiV1EventsEventSlugAttendeesRouteImport } from './routes/api/v1/events/$eventSlug/attendees'
+import { Route as ApiV1EventsEventSlugAvailabilityRouteImport } from './routes/api/v1/events/$eventSlug/availability'
+import { Route as ApiV1EventsEventSlugFloorPlanRouteImport } from './routes/api/v1/events/$eventSlug/floor-plan'
+import { Route as ApiV1AdminBookingsReferenceApproveRouteImport } from './routes/api/v1/admin/bookings/$reference/approve'
+import { Route as ApiV1AdminBookingsReferenceExpireRouteImport } from './routes/api/v1/admin/bookings/$reference/expire'
+import { Route as ApiV1AdminBookingsReferencePaymentProofUrlRouteImport } from './routes/api/v1/admin/bookings/$reference/payment-proof-url'
+import { Route as ApiV1AdminBookingsReferenceReassignRouteImport } from './routes/api/v1/admin/bookings/$reference/reassign'
+import { Route as ApiV1AdminBookingsReferenceRefundCompleteRouteImport } from './routes/api/v1/admin/bookings/$reference/refund-complete'
+import { Route as ApiV1AdminBookingsReferenceReleaseRouteImport } from './routes/api/v1/admin/bookings/$reference/release'
+import { Route as ApiV1AdminBookingsReferenceResolveConflictRouteImport } from './routes/api/v1/admin/bookings/$reference/resolve-conflict'
+import { Route as ApiV1AdminBookingsReferenceReturnForCorrectionRouteImport } from './routes/api/v1/admin/bookings/$reference/return-for-correction'
+import { Route as ApiV1AdminEventsEventSlugIndexRouteImport } from './routes/api/v1/admin/events/$eventSlug/index'
+import { Route as ApiV1AdminEventsEventSlugAuditRouteImport } from './routes/api/v1/admin/events/$eventSlug/audit'
+import { Route as ApiV1AdminEventsEventSlugFloorPlanRouteImport } from './routes/api/v1/admin/events/$eventSlug/floor-plan'
+import { Route as ApiV1AdminEventsEventSlugMetricsRouteImport } from './routes/api/v1/admin/events/$eventSlug/metrics'
+import { Route as ApiV1AdminEventsEventSlugNotificationsRouteImport } from './routes/api/v1/admin/events/$eventSlug/notifications'
+import { Route as ApiV1AdminEventsEventSlugSummaryRouteImport } from './routes/api/v1/admin/events/$eventSlug/summary'
+import { Route as ApiV1EventsEventSlugBookingsIndexRouteImport } from './routes/api/v1/events/$eventSlug/bookings/index'
+import { Route as ApiV1EventsEventSlugBookingsReferenceRouteImport } from './routes/api/v1/events/$eventSlug/bookings/$reference'
+import { Route as ApiV1EventsEventSlugSpacesSpaceIdRouteImport } from './routes/api/v1/events/$eventSlug/spaces/$spaceId'
+import { Route as ApiV1AdminEventsEventSlugBookingsIndexRouteImport } from './routes/api/v1/admin/events/$eventSlug/bookings/index'
+import { Route as ApiV1AdminEventsEventSlugBookingsReferenceRouteImport } from './routes/api/v1/admin/events/$eventSlug/bookings/$reference'
+import { Route as ApiV1AdminEventsEventSlugSpacesIndexRouteImport } from './routes/api/v1/admin/events/$eventSlug/spaces/index'
+import { Route as ApiV1AdminEventsEventSlugSpacesSpaceIdRouteImport } from './routes/api/v1/admin/events/$eventSlug/spaces/$spaceId'
+import { Route as ApiV1AdminEventsEventSlugSpacesValidatePlacementRouteImport } from './routes/api/v1/admin/events/$eventSlug/spaces/validate-placement'
+import { Route as ApiV1EventsEventSlugBookingsReferencePaymentEvidenceRouteImport } from './routes/api/v1/events/$eventSlug/bookings/$reference.payment.evidence'
+import { Route as ApiV1EventsEventSlugBookingsReferencePaymentInitiateRouteImport } from './routes/api/v1/events/$eventSlug/bookings/$reference.payment.initiate'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +96,225 @@ const BookStallIdRoute = BookStallIdRouteImport.update({
   path: '/book/$stallId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1UploadsPaymentProofRoute =
+  ApiV1UploadsPaymentProofRouteImport.update({
+    id: '/api/v1/uploads/payment-proof',
+    path: '/api/v1/uploads/payment-proof',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1WebhooksPayfastRoute = ApiV1WebhooksPayfastRouteImport.update({
+  id: '/api/v1/webhooks/payfast',
+  path: '/api/v1/webhooks/payfast',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1WebhooksSafepayRoute = ApiV1WebhooksSafepayRouteImport.update({
+  id: '/api/v1/webhooks/safepay',
+  path: '/api/v1/webhooks/safepay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1WebhooksSimulatedRoute = ApiV1WebhooksSimulatedRouteImport.update({
+  id: '/api/v1/webhooks/simulated',
+  path: '/api/v1/webhooks/simulated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AdminAuthLoginRoute = ApiV1AdminAuthLoginRouteImport.update({
+  id: '/api/v1/admin/auth/login',
+  path: '/api/v1/admin/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AdminAuthLogoutRoute = ApiV1AdminAuthLogoutRouteImport.update({
+  id: '/api/v1/admin/auth/logout',
+  path: '/api/v1/admin/auth/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AdminAuthRefreshRoute = ApiV1AdminAuthRefreshRouteImport.update({
+  id: '/api/v1/admin/auth/refresh',
+  path: '/api/v1/admin/auth/refresh',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AdminEventsIndexRoute = ApiV1AdminEventsIndexRouteImport.update({
+  id: '/api/v1/admin/events/',
+  path: '/api/v1/admin/events/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AdminUsersIndexRoute = ApiV1AdminUsersIndexRouteImport.update({
+  id: '/api/v1/admin/users/',
+  path: '/api/v1/admin/users/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AdminUsersUserIdRoute = ApiV1AdminUsersUserIdRouteImport.update({
+  id: '/api/v1/admin/users/$userId',
+  path: '/api/v1/admin/users/$userId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1EventsEventSlugIndexRoute =
+  ApiV1EventsEventSlugIndexRouteImport.update({
+    id: '/api/v1/events/$eventSlug/',
+    path: '/api/v1/events/$eventSlug/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1EventsEventSlugAttendeesRoute =
+  ApiV1EventsEventSlugAttendeesRouteImport.update({
+    id: '/api/v1/events/$eventSlug/attendees',
+    path: '/api/v1/events/$eventSlug/attendees',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1EventsEventSlugAvailabilityRoute =
+  ApiV1EventsEventSlugAvailabilityRouteImport.update({
+    id: '/api/v1/events/$eventSlug/availability',
+    path: '/api/v1/events/$eventSlug/availability',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1EventsEventSlugFloorPlanRoute =
+  ApiV1EventsEventSlugFloorPlanRouteImport.update({
+    id: '/api/v1/events/$eventSlug/floor-plan',
+    path: '/api/v1/events/$eventSlug/floor-plan',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminBookingsReferenceApproveRoute =
+  ApiV1AdminBookingsReferenceApproveRouteImport.update({
+    id: '/api/v1/admin/bookings/$reference/approve',
+    path: '/api/v1/admin/bookings/$reference/approve',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminBookingsReferenceExpireRoute =
+  ApiV1AdminBookingsReferenceExpireRouteImport.update({
+    id: '/api/v1/admin/bookings/$reference/expire',
+    path: '/api/v1/admin/bookings/$reference/expire',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminBookingsReferencePaymentProofUrlRoute =
+  ApiV1AdminBookingsReferencePaymentProofUrlRouteImport.update({
+    id: '/api/v1/admin/bookings/$reference/payment-proof-url',
+    path: '/api/v1/admin/bookings/$reference/payment-proof-url',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminBookingsReferenceReassignRoute =
+  ApiV1AdminBookingsReferenceReassignRouteImport.update({
+    id: '/api/v1/admin/bookings/$reference/reassign',
+    path: '/api/v1/admin/bookings/$reference/reassign',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminBookingsReferenceRefundCompleteRoute =
+  ApiV1AdminBookingsReferenceRefundCompleteRouteImport.update({
+    id: '/api/v1/admin/bookings/$reference/refund-complete',
+    path: '/api/v1/admin/bookings/$reference/refund-complete',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminBookingsReferenceReleaseRoute =
+  ApiV1AdminBookingsReferenceReleaseRouteImport.update({
+    id: '/api/v1/admin/bookings/$reference/release',
+    path: '/api/v1/admin/bookings/$reference/release',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminBookingsReferenceResolveConflictRoute =
+  ApiV1AdminBookingsReferenceResolveConflictRouteImport.update({
+    id: '/api/v1/admin/bookings/$reference/resolve-conflict',
+    path: '/api/v1/admin/bookings/$reference/resolve-conflict',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminBookingsReferenceReturnForCorrectionRoute =
+  ApiV1AdminBookingsReferenceReturnForCorrectionRouteImport.update({
+    id: '/api/v1/admin/bookings/$reference/return-for-correction',
+    path: '/api/v1/admin/bookings/$reference/return-for-correction',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminEventsEventSlugIndexRoute =
+  ApiV1AdminEventsEventSlugIndexRouteImport.update({
+    id: '/api/v1/admin/events/$eventSlug/',
+    path: '/api/v1/admin/events/$eventSlug/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminEventsEventSlugAuditRoute =
+  ApiV1AdminEventsEventSlugAuditRouteImport.update({
+    id: '/api/v1/admin/events/$eventSlug/audit',
+    path: '/api/v1/admin/events/$eventSlug/audit',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminEventsEventSlugFloorPlanRoute =
+  ApiV1AdminEventsEventSlugFloorPlanRouteImport.update({
+    id: '/api/v1/admin/events/$eventSlug/floor-plan',
+    path: '/api/v1/admin/events/$eventSlug/floor-plan',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminEventsEventSlugMetricsRoute =
+  ApiV1AdminEventsEventSlugMetricsRouteImport.update({
+    id: '/api/v1/admin/events/$eventSlug/metrics',
+    path: '/api/v1/admin/events/$eventSlug/metrics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminEventsEventSlugNotificationsRoute =
+  ApiV1AdminEventsEventSlugNotificationsRouteImport.update({
+    id: '/api/v1/admin/events/$eventSlug/notifications',
+    path: '/api/v1/admin/events/$eventSlug/notifications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminEventsEventSlugSummaryRoute =
+  ApiV1AdminEventsEventSlugSummaryRouteImport.update({
+    id: '/api/v1/admin/events/$eventSlug/summary',
+    path: '/api/v1/admin/events/$eventSlug/summary',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1EventsEventSlugBookingsIndexRoute =
+  ApiV1EventsEventSlugBookingsIndexRouteImport.update({
+    id: '/api/v1/events/$eventSlug/bookings/',
+    path: '/api/v1/events/$eventSlug/bookings/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1EventsEventSlugBookingsReferenceRoute =
+  ApiV1EventsEventSlugBookingsReferenceRouteImport.update({
+    id: '/api/v1/events/$eventSlug/bookings/$reference',
+    path: '/api/v1/events/$eventSlug/bookings/$reference',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1EventsEventSlugSpacesSpaceIdRoute =
+  ApiV1EventsEventSlugSpacesSpaceIdRouteImport.update({
+    id: '/api/v1/events/$eventSlug/spaces/$spaceId',
+    path: '/api/v1/events/$eventSlug/spaces/$spaceId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminEventsEventSlugBookingsIndexRoute =
+  ApiV1AdminEventsEventSlugBookingsIndexRouteImport.update({
+    id: '/api/v1/admin/events/$eventSlug/bookings/',
+    path: '/api/v1/admin/events/$eventSlug/bookings/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminEventsEventSlugBookingsReferenceRoute =
+  ApiV1AdminEventsEventSlugBookingsReferenceRouteImport.update({
+    id: '/api/v1/admin/events/$eventSlug/bookings/$reference',
+    path: '/api/v1/admin/events/$eventSlug/bookings/$reference',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminEventsEventSlugSpacesIndexRoute =
+  ApiV1AdminEventsEventSlugSpacesIndexRouteImport.update({
+    id: '/api/v1/admin/events/$eventSlug/spaces/',
+    path: '/api/v1/admin/events/$eventSlug/spaces/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminEventsEventSlugSpacesSpaceIdRoute =
+  ApiV1AdminEventsEventSlugSpacesSpaceIdRouteImport.update({
+    id: '/api/v1/admin/events/$eventSlug/spaces/$spaceId',
+    path: '/api/v1/admin/events/$eventSlug/spaces/$spaceId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdminEventsEventSlugSpacesValidatePlacementRoute =
+  ApiV1AdminEventsEventSlugSpacesValidatePlacementRouteImport.update({
+    id: '/api/v1/admin/events/$eventSlug/spaces/validate-placement',
+    path: '/api/v1/admin/events/$eventSlug/spaces/validate-placement',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1EventsEventSlugBookingsReferencePaymentEvidenceRoute =
+  ApiV1EventsEventSlugBookingsReferencePaymentEvidenceRouteImport.update({
+    id: '/payment/evidence',
+    path: '/payment/evidence',
+    getParentRoute: () => ApiV1EventsEventSlugBookingsReferenceRoute,
+  } as any)
+const ApiV1EventsEventSlugBookingsReferencePaymentInitiateRoute =
+  ApiV1EventsEventSlugBookingsReferencePaymentInitiateRouteImport.update({
+    id: '/payment/initiate',
+    path: '/payment/initiate',
+    getParentRoute: () => ApiV1EventsEventSlugBookingsReferenceRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +325,44 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/floor-plan': typeof FloorPlanRoute
   '/book/$stallId': typeof BookStallIdRoute
+  '/api/v1/uploads/payment-proof': typeof ApiV1UploadsPaymentProofRoute
+  '/api/v1/webhooks/payfast': typeof ApiV1WebhooksPayfastRoute
+  '/api/v1/webhooks/safepay': typeof ApiV1WebhooksSafepayRoute
+  '/api/v1/webhooks/simulated': typeof ApiV1WebhooksSimulatedRoute
+  '/api/v1/admin/auth/login': typeof ApiV1AdminAuthLoginRoute
+  '/api/v1/admin/auth/logout': typeof ApiV1AdminAuthLogoutRoute
+  '/api/v1/admin/auth/refresh': typeof ApiV1AdminAuthRefreshRoute
+  '/api/v1/admin/users/$userId': typeof ApiV1AdminUsersUserIdRoute
+  '/api/v1/events/$eventSlug/attendees': typeof ApiV1EventsEventSlugAttendeesRoute
+  '/api/v1/events/$eventSlug/availability': typeof ApiV1EventsEventSlugAvailabilityRoute
+  '/api/v1/events/$eventSlug/floor-plan': typeof ApiV1EventsEventSlugFloorPlanRoute
+  '/api/v1/admin/events/': typeof ApiV1AdminEventsIndexRoute
+  '/api/v1/admin/users/': typeof ApiV1AdminUsersIndexRoute
+  '/api/v1/events/$eventSlug/': typeof ApiV1EventsEventSlugIndexRoute
+  '/api/v1/admin/bookings/$reference/approve': typeof ApiV1AdminBookingsReferenceApproveRoute
+  '/api/v1/admin/bookings/$reference/expire': typeof ApiV1AdminBookingsReferenceExpireRoute
+  '/api/v1/admin/bookings/$reference/payment-proof-url': typeof ApiV1AdminBookingsReferencePaymentProofUrlRoute
+  '/api/v1/admin/bookings/$reference/reassign': typeof ApiV1AdminBookingsReferenceReassignRoute
+  '/api/v1/admin/bookings/$reference/refund-complete': typeof ApiV1AdminBookingsReferenceRefundCompleteRoute
+  '/api/v1/admin/bookings/$reference/release': typeof ApiV1AdminBookingsReferenceReleaseRoute
+  '/api/v1/admin/bookings/$reference/resolve-conflict': typeof ApiV1AdminBookingsReferenceResolveConflictRoute
+  '/api/v1/admin/bookings/$reference/return-for-correction': typeof ApiV1AdminBookingsReferenceReturnForCorrectionRoute
+  '/api/v1/admin/events/$eventSlug/audit': typeof ApiV1AdminEventsEventSlugAuditRoute
+  '/api/v1/admin/events/$eventSlug/floor-plan': typeof ApiV1AdminEventsEventSlugFloorPlanRoute
+  '/api/v1/admin/events/$eventSlug/metrics': typeof ApiV1AdminEventsEventSlugMetricsRoute
+  '/api/v1/admin/events/$eventSlug/notifications': typeof ApiV1AdminEventsEventSlugNotificationsRoute
+  '/api/v1/admin/events/$eventSlug/summary': typeof ApiV1AdminEventsEventSlugSummaryRoute
+  '/api/v1/events/$eventSlug/bookings/$reference': typeof ApiV1EventsEventSlugBookingsReferenceRouteWithChildren
+  '/api/v1/events/$eventSlug/spaces/$spaceId': typeof ApiV1EventsEventSlugSpacesSpaceIdRoute
+  '/api/v1/admin/events/$eventSlug/': typeof ApiV1AdminEventsEventSlugIndexRoute
+  '/api/v1/events/$eventSlug/bookings/': typeof ApiV1EventsEventSlugBookingsIndexRoute
+  '/api/v1/admin/events/$eventSlug/bookings/$reference': typeof ApiV1AdminEventsEventSlugBookingsReferenceRoute
+  '/api/v1/admin/events/$eventSlug/spaces/$spaceId': typeof ApiV1AdminEventsEventSlugSpacesSpaceIdRoute
+  '/api/v1/admin/events/$eventSlug/spaces/validate-placement': typeof ApiV1AdminEventsEventSlugSpacesValidatePlacementRoute
+  '/api/v1/admin/events/$eventSlug/bookings/': typeof ApiV1AdminEventsEventSlugBookingsIndexRoute
+  '/api/v1/admin/events/$eventSlug/spaces/': typeof ApiV1AdminEventsEventSlugSpacesIndexRoute
+  '/api/v1/events/$eventSlug/bookings/$reference/payment/evidence': typeof ApiV1EventsEventSlugBookingsReferencePaymentEvidenceRoute
+  '/api/v1/events/$eventSlug/bookings/$reference/payment/initiate': typeof ApiV1EventsEventSlugBookingsReferencePaymentInitiateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +373,44 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/floor-plan': typeof FloorPlanRoute
   '/book/$stallId': typeof BookStallIdRoute
+  '/api/v1/uploads/payment-proof': typeof ApiV1UploadsPaymentProofRoute
+  '/api/v1/webhooks/payfast': typeof ApiV1WebhooksPayfastRoute
+  '/api/v1/webhooks/safepay': typeof ApiV1WebhooksSafepayRoute
+  '/api/v1/webhooks/simulated': typeof ApiV1WebhooksSimulatedRoute
+  '/api/v1/admin/auth/login': typeof ApiV1AdminAuthLoginRoute
+  '/api/v1/admin/auth/logout': typeof ApiV1AdminAuthLogoutRoute
+  '/api/v1/admin/auth/refresh': typeof ApiV1AdminAuthRefreshRoute
+  '/api/v1/admin/users/$userId': typeof ApiV1AdminUsersUserIdRoute
+  '/api/v1/events/$eventSlug/attendees': typeof ApiV1EventsEventSlugAttendeesRoute
+  '/api/v1/events/$eventSlug/availability': typeof ApiV1EventsEventSlugAvailabilityRoute
+  '/api/v1/events/$eventSlug/floor-plan': typeof ApiV1EventsEventSlugFloorPlanRoute
+  '/api/v1/admin/events': typeof ApiV1AdminEventsIndexRoute
+  '/api/v1/admin/users': typeof ApiV1AdminUsersIndexRoute
+  '/api/v1/events/$eventSlug': typeof ApiV1EventsEventSlugIndexRoute
+  '/api/v1/admin/bookings/$reference/approve': typeof ApiV1AdminBookingsReferenceApproveRoute
+  '/api/v1/admin/bookings/$reference/expire': typeof ApiV1AdminBookingsReferenceExpireRoute
+  '/api/v1/admin/bookings/$reference/payment-proof-url': typeof ApiV1AdminBookingsReferencePaymentProofUrlRoute
+  '/api/v1/admin/bookings/$reference/reassign': typeof ApiV1AdminBookingsReferenceReassignRoute
+  '/api/v1/admin/bookings/$reference/refund-complete': typeof ApiV1AdminBookingsReferenceRefundCompleteRoute
+  '/api/v1/admin/bookings/$reference/release': typeof ApiV1AdminBookingsReferenceReleaseRoute
+  '/api/v1/admin/bookings/$reference/resolve-conflict': typeof ApiV1AdminBookingsReferenceResolveConflictRoute
+  '/api/v1/admin/bookings/$reference/return-for-correction': typeof ApiV1AdminBookingsReferenceReturnForCorrectionRoute
+  '/api/v1/admin/events/$eventSlug/audit': typeof ApiV1AdminEventsEventSlugAuditRoute
+  '/api/v1/admin/events/$eventSlug/floor-plan': typeof ApiV1AdminEventsEventSlugFloorPlanRoute
+  '/api/v1/admin/events/$eventSlug/metrics': typeof ApiV1AdminEventsEventSlugMetricsRoute
+  '/api/v1/admin/events/$eventSlug/notifications': typeof ApiV1AdminEventsEventSlugNotificationsRoute
+  '/api/v1/admin/events/$eventSlug/summary': typeof ApiV1AdminEventsEventSlugSummaryRoute
+  '/api/v1/events/$eventSlug/bookings/$reference': typeof ApiV1EventsEventSlugBookingsReferenceRouteWithChildren
+  '/api/v1/events/$eventSlug/spaces/$spaceId': typeof ApiV1EventsEventSlugSpacesSpaceIdRoute
+  '/api/v1/admin/events/$eventSlug': typeof ApiV1AdminEventsEventSlugIndexRoute
+  '/api/v1/events/$eventSlug/bookings': typeof ApiV1EventsEventSlugBookingsIndexRoute
+  '/api/v1/admin/events/$eventSlug/bookings/$reference': typeof ApiV1AdminEventsEventSlugBookingsReferenceRoute
+  '/api/v1/admin/events/$eventSlug/spaces/$spaceId': typeof ApiV1AdminEventsEventSlugSpacesSpaceIdRoute
+  '/api/v1/admin/events/$eventSlug/spaces/validate-placement': typeof ApiV1AdminEventsEventSlugSpacesValidatePlacementRoute
+  '/api/v1/admin/events/$eventSlug/bookings': typeof ApiV1AdminEventsEventSlugBookingsIndexRoute
+  '/api/v1/admin/events/$eventSlug/spaces': typeof ApiV1AdminEventsEventSlugSpacesIndexRoute
+  '/api/v1/events/$eventSlug/bookings/$reference/payment/evidence': typeof ApiV1EventsEventSlugBookingsReferencePaymentEvidenceRoute
+  '/api/v1/events/$eventSlug/bookings/$reference/payment/initiate': typeof ApiV1EventsEventSlugBookingsReferencePaymentInitiateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +422,44 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/floor-plan': typeof FloorPlanRoute
   '/book/$stallId': typeof BookStallIdRoute
+  '/api/v1/uploads/payment-proof': typeof ApiV1UploadsPaymentProofRoute
+  '/api/v1/webhooks/payfast': typeof ApiV1WebhooksPayfastRoute
+  '/api/v1/webhooks/safepay': typeof ApiV1WebhooksSafepayRoute
+  '/api/v1/webhooks/simulated': typeof ApiV1WebhooksSimulatedRoute
+  '/api/v1/admin/auth/login': typeof ApiV1AdminAuthLoginRoute
+  '/api/v1/admin/auth/logout': typeof ApiV1AdminAuthLogoutRoute
+  '/api/v1/admin/auth/refresh': typeof ApiV1AdminAuthRefreshRoute
+  '/api/v1/admin/users/$userId': typeof ApiV1AdminUsersUserIdRoute
+  '/api/v1/events/$eventSlug/attendees': typeof ApiV1EventsEventSlugAttendeesRoute
+  '/api/v1/events/$eventSlug/availability': typeof ApiV1EventsEventSlugAvailabilityRoute
+  '/api/v1/events/$eventSlug/floor-plan': typeof ApiV1EventsEventSlugFloorPlanRoute
+  '/api/v1/admin/events/': typeof ApiV1AdminEventsIndexRoute
+  '/api/v1/admin/users/': typeof ApiV1AdminUsersIndexRoute
+  '/api/v1/events/$eventSlug/': typeof ApiV1EventsEventSlugIndexRoute
+  '/api/v1/admin/bookings/$reference/approve': typeof ApiV1AdminBookingsReferenceApproveRoute
+  '/api/v1/admin/bookings/$reference/expire': typeof ApiV1AdminBookingsReferenceExpireRoute
+  '/api/v1/admin/bookings/$reference/payment-proof-url': typeof ApiV1AdminBookingsReferencePaymentProofUrlRoute
+  '/api/v1/admin/bookings/$reference/reassign': typeof ApiV1AdminBookingsReferenceReassignRoute
+  '/api/v1/admin/bookings/$reference/refund-complete': typeof ApiV1AdminBookingsReferenceRefundCompleteRoute
+  '/api/v1/admin/bookings/$reference/release': typeof ApiV1AdminBookingsReferenceReleaseRoute
+  '/api/v1/admin/bookings/$reference/resolve-conflict': typeof ApiV1AdminBookingsReferenceResolveConflictRoute
+  '/api/v1/admin/bookings/$reference/return-for-correction': typeof ApiV1AdminBookingsReferenceReturnForCorrectionRoute
+  '/api/v1/admin/events/$eventSlug/audit': typeof ApiV1AdminEventsEventSlugAuditRoute
+  '/api/v1/admin/events/$eventSlug/floor-plan': typeof ApiV1AdminEventsEventSlugFloorPlanRoute
+  '/api/v1/admin/events/$eventSlug/metrics': typeof ApiV1AdminEventsEventSlugMetricsRoute
+  '/api/v1/admin/events/$eventSlug/notifications': typeof ApiV1AdminEventsEventSlugNotificationsRoute
+  '/api/v1/admin/events/$eventSlug/summary': typeof ApiV1AdminEventsEventSlugSummaryRoute
+  '/api/v1/events/$eventSlug/bookings/$reference': typeof ApiV1EventsEventSlugBookingsReferenceRouteWithChildren
+  '/api/v1/events/$eventSlug/spaces/$spaceId': typeof ApiV1EventsEventSlugSpacesSpaceIdRoute
+  '/api/v1/admin/events/$eventSlug/': typeof ApiV1AdminEventsEventSlugIndexRoute
+  '/api/v1/events/$eventSlug/bookings/': typeof ApiV1EventsEventSlugBookingsIndexRoute
+  '/api/v1/admin/events/$eventSlug/bookings/$reference': typeof ApiV1AdminEventsEventSlugBookingsReferenceRoute
+  '/api/v1/admin/events/$eventSlug/spaces/$spaceId': typeof ApiV1AdminEventsEventSlugSpacesSpaceIdRoute
+  '/api/v1/admin/events/$eventSlug/spaces/validate-placement': typeof ApiV1AdminEventsEventSlugSpacesValidatePlacementRoute
+  '/api/v1/admin/events/$eventSlug/bookings/': typeof ApiV1AdminEventsEventSlugBookingsIndexRoute
+  '/api/v1/admin/events/$eventSlug/spaces/': typeof ApiV1AdminEventsEventSlugSpacesIndexRoute
+  '/api/v1/events/$eventSlug/bookings/$reference/payment/evidence': typeof ApiV1EventsEventSlugBookingsReferencePaymentEvidenceRoute
+  '/api/v1/events/$eventSlug/bookings/$reference/payment/initiate': typeof ApiV1EventsEventSlugBookingsReferencePaymentInitiateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +472,44 @@ export interface FileRouteTypes {
     | '/contact'
     | '/floor-plan'
     | '/book/$stallId'
+    | '/api/v1/uploads/payment-proof'
+    | '/api/v1/webhooks/payfast'
+    | '/api/v1/webhooks/safepay'
+    | '/api/v1/webhooks/simulated'
+    | '/api/v1/admin/auth/login'
+    | '/api/v1/admin/auth/logout'
+    | '/api/v1/admin/auth/refresh'
+    | '/api/v1/admin/users/$userId'
+    | '/api/v1/events/$eventSlug/attendees'
+    | '/api/v1/events/$eventSlug/availability'
+    | '/api/v1/events/$eventSlug/floor-plan'
+    | '/api/v1/admin/events/'
+    | '/api/v1/admin/users/'
+    | '/api/v1/events/$eventSlug/'
+    | '/api/v1/admin/bookings/$reference/approve'
+    | '/api/v1/admin/bookings/$reference/expire'
+    | '/api/v1/admin/bookings/$reference/payment-proof-url'
+    | '/api/v1/admin/bookings/$reference/reassign'
+    | '/api/v1/admin/bookings/$reference/refund-complete'
+    | '/api/v1/admin/bookings/$reference/release'
+    | '/api/v1/admin/bookings/$reference/resolve-conflict'
+    | '/api/v1/admin/bookings/$reference/return-for-correction'
+    | '/api/v1/admin/events/$eventSlug/audit'
+    | '/api/v1/admin/events/$eventSlug/floor-plan'
+    | '/api/v1/admin/events/$eventSlug/metrics'
+    | '/api/v1/admin/events/$eventSlug/notifications'
+    | '/api/v1/admin/events/$eventSlug/summary'
+    | '/api/v1/events/$eventSlug/bookings/$reference'
+    | '/api/v1/events/$eventSlug/spaces/$spaceId'
+    | '/api/v1/admin/events/$eventSlug/'
+    | '/api/v1/events/$eventSlug/bookings/'
+    | '/api/v1/admin/events/$eventSlug/bookings/$reference'
+    | '/api/v1/admin/events/$eventSlug/spaces/$spaceId'
+    | '/api/v1/admin/events/$eventSlug/spaces/validate-placement'
+    | '/api/v1/admin/events/$eventSlug/bookings/'
+    | '/api/v1/admin/events/$eventSlug/spaces/'
+    | '/api/v1/events/$eventSlug/bookings/$reference/payment/evidence'
+    | '/api/v1/events/$eventSlug/bookings/$reference/payment/initiate'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +520,44 @@ export interface FileRouteTypes {
     | '/contact'
     | '/floor-plan'
     | '/book/$stallId'
+    | '/api/v1/uploads/payment-proof'
+    | '/api/v1/webhooks/payfast'
+    | '/api/v1/webhooks/safepay'
+    | '/api/v1/webhooks/simulated'
+    | '/api/v1/admin/auth/login'
+    | '/api/v1/admin/auth/logout'
+    | '/api/v1/admin/auth/refresh'
+    | '/api/v1/admin/users/$userId'
+    | '/api/v1/events/$eventSlug/attendees'
+    | '/api/v1/events/$eventSlug/availability'
+    | '/api/v1/events/$eventSlug/floor-plan'
+    | '/api/v1/admin/events'
+    | '/api/v1/admin/users'
+    | '/api/v1/events/$eventSlug'
+    | '/api/v1/admin/bookings/$reference/approve'
+    | '/api/v1/admin/bookings/$reference/expire'
+    | '/api/v1/admin/bookings/$reference/payment-proof-url'
+    | '/api/v1/admin/bookings/$reference/reassign'
+    | '/api/v1/admin/bookings/$reference/refund-complete'
+    | '/api/v1/admin/bookings/$reference/release'
+    | '/api/v1/admin/bookings/$reference/resolve-conflict'
+    | '/api/v1/admin/bookings/$reference/return-for-correction'
+    | '/api/v1/admin/events/$eventSlug/audit'
+    | '/api/v1/admin/events/$eventSlug/floor-plan'
+    | '/api/v1/admin/events/$eventSlug/metrics'
+    | '/api/v1/admin/events/$eventSlug/notifications'
+    | '/api/v1/admin/events/$eventSlug/summary'
+    | '/api/v1/events/$eventSlug/bookings/$reference'
+    | '/api/v1/events/$eventSlug/spaces/$spaceId'
+    | '/api/v1/admin/events/$eventSlug'
+    | '/api/v1/events/$eventSlug/bookings'
+    | '/api/v1/admin/events/$eventSlug/bookings/$reference'
+    | '/api/v1/admin/events/$eventSlug/spaces/$spaceId'
+    | '/api/v1/admin/events/$eventSlug/spaces/validate-placement'
+    | '/api/v1/admin/events/$eventSlug/bookings'
+    | '/api/v1/admin/events/$eventSlug/spaces'
+    | '/api/v1/events/$eventSlug/bookings/$reference/payment/evidence'
+    | '/api/v1/events/$eventSlug/bookings/$reference/payment/initiate'
   id:
     | '__root__'
     | '/'
@@ -121,6 +568,44 @@ export interface FileRouteTypes {
     | '/contact'
     | '/floor-plan'
     | '/book/$stallId'
+    | '/api/v1/uploads/payment-proof'
+    | '/api/v1/webhooks/payfast'
+    | '/api/v1/webhooks/safepay'
+    | '/api/v1/webhooks/simulated'
+    | '/api/v1/admin/auth/login'
+    | '/api/v1/admin/auth/logout'
+    | '/api/v1/admin/auth/refresh'
+    | '/api/v1/admin/users/$userId'
+    | '/api/v1/events/$eventSlug/attendees'
+    | '/api/v1/events/$eventSlug/availability'
+    | '/api/v1/events/$eventSlug/floor-plan'
+    | '/api/v1/admin/events/'
+    | '/api/v1/admin/users/'
+    | '/api/v1/events/$eventSlug/'
+    | '/api/v1/admin/bookings/$reference/approve'
+    | '/api/v1/admin/bookings/$reference/expire'
+    | '/api/v1/admin/bookings/$reference/payment-proof-url'
+    | '/api/v1/admin/bookings/$reference/reassign'
+    | '/api/v1/admin/bookings/$reference/refund-complete'
+    | '/api/v1/admin/bookings/$reference/release'
+    | '/api/v1/admin/bookings/$reference/resolve-conflict'
+    | '/api/v1/admin/bookings/$reference/return-for-correction'
+    | '/api/v1/admin/events/$eventSlug/audit'
+    | '/api/v1/admin/events/$eventSlug/floor-plan'
+    | '/api/v1/admin/events/$eventSlug/metrics'
+    | '/api/v1/admin/events/$eventSlug/notifications'
+    | '/api/v1/admin/events/$eventSlug/summary'
+    | '/api/v1/events/$eventSlug/bookings/$reference'
+    | '/api/v1/events/$eventSlug/spaces/$spaceId'
+    | '/api/v1/admin/events/$eventSlug/'
+    | '/api/v1/events/$eventSlug/bookings/'
+    | '/api/v1/admin/events/$eventSlug/bookings/$reference'
+    | '/api/v1/admin/events/$eventSlug/spaces/$spaceId'
+    | '/api/v1/admin/events/$eventSlug/spaces/validate-placement'
+    | '/api/v1/admin/events/$eventSlug/bookings/'
+    | '/api/v1/admin/events/$eventSlug/spaces/'
+    | '/api/v1/events/$eventSlug/bookings/$reference/payment/evidence'
+    | '/api/v1/events/$eventSlug/bookings/$reference/payment/initiate'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,6 +617,42 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   FloorPlanRoute: typeof FloorPlanRoute
   BookStallIdRoute: typeof BookStallIdRoute
+  ApiV1UploadsPaymentProofRoute: typeof ApiV1UploadsPaymentProofRoute
+  ApiV1WebhooksPayfastRoute: typeof ApiV1WebhooksPayfastRoute
+  ApiV1WebhooksSafepayRoute: typeof ApiV1WebhooksSafepayRoute
+  ApiV1WebhooksSimulatedRoute: typeof ApiV1WebhooksSimulatedRoute
+  ApiV1AdminAuthLoginRoute: typeof ApiV1AdminAuthLoginRoute
+  ApiV1AdminAuthLogoutRoute: typeof ApiV1AdminAuthLogoutRoute
+  ApiV1AdminAuthRefreshRoute: typeof ApiV1AdminAuthRefreshRoute
+  ApiV1AdminUsersUserIdRoute: typeof ApiV1AdminUsersUserIdRoute
+  ApiV1EventsEventSlugAttendeesRoute: typeof ApiV1EventsEventSlugAttendeesRoute
+  ApiV1EventsEventSlugAvailabilityRoute: typeof ApiV1EventsEventSlugAvailabilityRoute
+  ApiV1EventsEventSlugFloorPlanRoute: typeof ApiV1EventsEventSlugFloorPlanRoute
+  ApiV1AdminEventsIndexRoute: typeof ApiV1AdminEventsIndexRoute
+  ApiV1AdminUsersIndexRoute: typeof ApiV1AdminUsersIndexRoute
+  ApiV1EventsEventSlugIndexRoute: typeof ApiV1EventsEventSlugIndexRoute
+  ApiV1AdminBookingsReferenceApproveRoute: typeof ApiV1AdminBookingsReferenceApproveRoute
+  ApiV1AdminBookingsReferenceExpireRoute: typeof ApiV1AdminBookingsReferenceExpireRoute
+  ApiV1AdminBookingsReferencePaymentProofUrlRoute: typeof ApiV1AdminBookingsReferencePaymentProofUrlRoute
+  ApiV1AdminBookingsReferenceReassignRoute: typeof ApiV1AdminBookingsReferenceReassignRoute
+  ApiV1AdminBookingsReferenceRefundCompleteRoute: typeof ApiV1AdminBookingsReferenceRefundCompleteRoute
+  ApiV1AdminBookingsReferenceReleaseRoute: typeof ApiV1AdminBookingsReferenceReleaseRoute
+  ApiV1AdminBookingsReferenceResolveConflictRoute: typeof ApiV1AdminBookingsReferenceResolveConflictRoute
+  ApiV1AdminBookingsReferenceReturnForCorrectionRoute: typeof ApiV1AdminBookingsReferenceReturnForCorrectionRoute
+  ApiV1AdminEventsEventSlugAuditRoute: typeof ApiV1AdminEventsEventSlugAuditRoute
+  ApiV1AdminEventsEventSlugFloorPlanRoute: typeof ApiV1AdminEventsEventSlugFloorPlanRoute
+  ApiV1AdminEventsEventSlugMetricsRoute: typeof ApiV1AdminEventsEventSlugMetricsRoute
+  ApiV1AdminEventsEventSlugNotificationsRoute: typeof ApiV1AdminEventsEventSlugNotificationsRoute
+  ApiV1AdminEventsEventSlugSummaryRoute: typeof ApiV1AdminEventsEventSlugSummaryRoute
+  ApiV1EventsEventSlugBookingsReferenceRoute: typeof ApiV1EventsEventSlugBookingsReferenceRouteWithChildren
+  ApiV1EventsEventSlugSpacesSpaceIdRoute: typeof ApiV1EventsEventSlugSpacesSpaceIdRoute
+  ApiV1AdminEventsEventSlugIndexRoute: typeof ApiV1AdminEventsEventSlugIndexRoute
+  ApiV1EventsEventSlugBookingsIndexRoute: typeof ApiV1EventsEventSlugBookingsIndexRoute
+  ApiV1AdminEventsEventSlugBookingsReferenceRoute: typeof ApiV1AdminEventsEventSlugBookingsReferenceRoute
+  ApiV1AdminEventsEventSlugSpacesSpaceIdRoute: typeof ApiV1AdminEventsEventSlugSpacesSpaceIdRoute
+  ApiV1AdminEventsEventSlugSpacesValidatePlacementRoute: typeof ApiV1AdminEventsEventSlugSpacesValidatePlacementRoute
+  ApiV1AdminEventsEventSlugBookingsIndexRoute: typeof ApiV1AdminEventsEventSlugBookingsIndexRoute
+  ApiV1AdminEventsEventSlugSpacesIndexRoute: typeof ApiV1AdminEventsEventSlugSpacesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -192,8 +713,292 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BookStallIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/uploads/payment-proof': {
+      id: '/api/v1/uploads/payment-proof'
+      path: '/api/v1/uploads/payment-proof'
+      fullPath: '/api/v1/uploads/payment-proof'
+      preLoaderRoute: typeof ApiV1UploadsPaymentProofRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/webhooks/payfast': {
+      id: '/api/v1/webhooks/payfast'
+      path: '/api/v1/webhooks/payfast'
+      fullPath: '/api/v1/webhooks/payfast'
+      preLoaderRoute: typeof ApiV1WebhooksPayfastRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/webhooks/safepay': {
+      id: '/api/v1/webhooks/safepay'
+      path: '/api/v1/webhooks/safepay'
+      fullPath: '/api/v1/webhooks/safepay'
+      preLoaderRoute: typeof ApiV1WebhooksSafepayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/webhooks/simulated': {
+      id: '/api/v1/webhooks/simulated'
+      path: '/api/v1/webhooks/simulated'
+      fullPath: '/api/v1/webhooks/simulated'
+      preLoaderRoute: typeof ApiV1WebhooksSimulatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/auth/login': {
+      id: '/api/v1/admin/auth/login'
+      path: '/api/v1/admin/auth/login'
+      fullPath: '/api/v1/admin/auth/login'
+      preLoaderRoute: typeof ApiV1AdminAuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/auth/logout': {
+      id: '/api/v1/admin/auth/logout'
+      path: '/api/v1/admin/auth/logout'
+      fullPath: '/api/v1/admin/auth/logout'
+      preLoaderRoute: typeof ApiV1AdminAuthLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/auth/refresh': {
+      id: '/api/v1/admin/auth/refresh'
+      path: '/api/v1/admin/auth/refresh'
+      fullPath: '/api/v1/admin/auth/refresh'
+      preLoaderRoute: typeof ApiV1AdminAuthRefreshRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/events/': {
+      id: '/api/v1/admin/events/'
+      path: '/api/v1/admin/events'
+      fullPath: '/api/v1/admin/events/'
+      preLoaderRoute: typeof ApiV1AdminEventsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/users/': {
+      id: '/api/v1/admin/users/'
+      path: '/api/v1/admin/users'
+      fullPath: '/api/v1/admin/users/'
+      preLoaderRoute: typeof ApiV1AdminUsersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/users/$userId': {
+      id: '/api/v1/admin/users/$userId'
+      path: '/api/v1/admin/users/$userId'
+      fullPath: '/api/v1/admin/users/$userId'
+      preLoaderRoute: typeof ApiV1AdminUsersUserIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/events/$eventSlug/': {
+      id: '/api/v1/events/$eventSlug/'
+      path: '/api/v1/events/$eventSlug'
+      fullPath: '/api/v1/events/$eventSlug/'
+      preLoaderRoute: typeof ApiV1EventsEventSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/events/$eventSlug/attendees': {
+      id: '/api/v1/events/$eventSlug/attendees'
+      path: '/api/v1/events/$eventSlug/attendees'
+      fullPath: '/api/v1/events/$eventSlug/attendees'
+      preLoaderRoute: typeof ApiV1EventsEventSlugAttendeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/events/$eventSlug/availability': {
+      id: '/api/v1/events/$eventSlug/availability'
+      path: '/api/v1/events/$eventSlug/availability'
+      fullPath: '/api/v1/events/$eventSlug/availability'
+      preLoaderRoute: typeof ApiV1EventsEventSlugAvailabilityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/events/$eventSlug/floor-plan': {
+      id: '/api/v1/events/$eventSlug/floor-plan'
+      path: '/api/v1/events/$eventSlug/floor-plan'
+      fullPath: '/api/v1/events/$eventSlug/floor-plan'
+      preLoaderRoute: typeof ApiV1EventsEventSlugFloorPlanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/bookings/$reference/approve': {
+      id: '/api/v1/admin/bookings/$reference/approve'
+      path: '/api/v1/admin/bookings/$reference/approve'
+      fullPath: '/api/v1/admin/bookings/$reference/approve'
+      preLoaderRoute: typeof ApiV1AdminBookingsReferenceApproveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/bookings/$reference/expire': {
+      id: '/api/v1/admin/bookings/$reference/expire'
+      path: '/api/v1/admin/bookings/$reference/expire'
+      fullPath: '/api/v1/admin/bookings/$reference/expire'
+      preLoaderRoute: typeof ApiV1AdminBookingsReferenceExpireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/bookings/$reference/payment-proof-url': {
+      id: '/api/v1/admin/bookings/$reference/payment-proof-url'
+      path: '/api/v1/admin/bookings/$reference/payment-proof-url'
+      fullPath: '/api/v1/admin/bookings/$reference/payment-proof-url'
+      preLoaderRoute: typeof ApiV1AdminBookingsReferencePaymentProofUrlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/bookings/$reference/reassign': {
+      id: '/api/v1/admin/bookings/$reference/reassign'
+      path: '/api/v1/admin/bookings/$reference/reassign'
+      fullPath: '/api/v1/admin/bookings/$reference/reassign'
+      preLoaderRoute: typeof ApiV1AdminBookingsReferenceReassignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/bookings/$reference/refund-complete': {
+      id: '/api/v1/admin/bookings/$reference/refund-complete'
+      path: '/api/v1/admin/bookings/$reference/refund-complete'
+      fullPath: '/api/v1/admin/bookings/$reference/refund-complete'
+      preLoaderRoute: typeof ApiV1AdminBookingsReferenceRefundCompleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/bookings/$reference/release': {
+      id: '/api/v1/admin/bookings/$reference/release'
+      path: '/api/v1/admin/bookings/$reference/release'
+      fullPath: '/api/v1/admin/bookings/$reference/release'
+      preLoaderRoute: typeof ApiV1AdminBookingsReferenceReleaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/bookings/$reference/resolve-conflict': {
+      id: '/api/v1/admin/bookings/$reference/resolve-conflict'
+      path: '/api/v1/admin/bookings/$reference/resolve-conflict'
+      fullPath: '/api/v1/admin/bookings/$reference/resolve-conflict'
+      preLoaderRoute: typeof ApiV1AdminBookingsReferenceResolveConflictRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/bookings/$reference/return-for-correction': {
+      id: '/api/v1/admin/bookings/$reference/return-for-correction'
+      path: '/api/v1/admin/bookings/$reference/return-for-correction'
+      fullPath: '/api/v1/admin/bookings/$reference/return-for-correction'
+      preLoaderRoute: typeof ApiV1AdminBookingsReferenceReturnForCorrectionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/events/$eventSlug/': {
+      id: '/api/v1/admin/events/$eventSlug/'
+      path: '/api/v1/admin/events/$eventSlug'
+      fullPath: '/api/v1/admin/events/$eventSlug/'
+      preLoaderRoute: typeof ApiV1AdminEventsEventSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/events/$eventSlug/audit': {
+      id: '/api/v1/admin/events/$eventSlug/audit'
+      path: '/api/v1/admin/events/$eventSlug/audit'
+      fullPath: '/api/v1/admin/events/$eventSlug/audit'
+      preLoaderRoute: typeof ApiV1AdminEventsEventSlugAuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/events/$eventSlug/floor-plan': {
+      id: '/api/v1/admin/events/$eventSlug/floor-plan'
+      path: '/api/v1/admin/events/$eventSlug/floor-plan'
+      fullPath: '/api/v1/admin/events/$eventSlug/floor-plan'
+      preLoaderRoute: typeof ApiV1AdminEventsEventSlugFloorPlanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/events/$eventSlug/metrics': {
+      id: '/api/v1/admin/events/$eventSlug/metrics'
+      path: '/api/v1/admin/events/$eventSlug/metrics'
+      fullPath: '/api/v1/admin/events/$eventSlug/metrics'
+      preLoaderRoute: typeof ApiV1AdminEventsEventSlugMetricsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/events/$eventSlug/notifications': {
+      id: '/api/v1/admin/events/$eventSlug/notifications'
+      path: '/api/v1/admin/events/$eventSlug/notifications'
+      fullPath: '/api/v1/admin/events/$eventSlug/notifications'
+      preLoaderRoute: typeof ApiV1AdminEventsEventSlugNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/events/$eventSlug/summary': {
+      id: '/api/v1/admin/events/$eventSlug/summary'
+      path: '/api/v1/admin/events/$eventSlug/summary'
+      fullPath: '/api/v1/admin/events/$eventSlug/summary'
+      preLoaderRoute: typeof ApiV1AdminEventsEventSlugSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/events/$eventSlug/bookings/': {
+      id: '/api/v1/events/$eventSlug/bookings/'
+      path: '/api/v1/events/$eventSlug/bookings'
+      fullPath: '/api/v1/events/$eventSlug/bookings/'
+      preLoaderRoute: typeof ApiV1EventsEventSlugBookingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/events/$eventSlug/bookings/$reference': {
+      id: '/api/v1/events/$eventSlug/bookings/$reference'
+      path: '/api/v1/events/$eventSlug/bookings/$reference'
+      fullPath: '/api/v1/events/$eventSlug/bookings/$reference'
+      preLoaderRoute: typeof ApiV1EventsEventSlugBookingsReferenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/events/$eventSlug/spaces/$spaceId': {
+      id: '/api/v1/events/$eventSlug/spaces/$spaceId'
+      path: '/api/v1/events/$eventSlug/spaces/$spaceId'
+      fullPath: '/api/v1/events/$eventSlug/spaces/$spaceId'
+      preLoaderRoute: typeof ApiV1EventsEventSlugSpacesSpaceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/events/$eventSlug/bookings/': {
+      id: '/api/v1/admin/events/$eventSlug/bookings/'
+      path: '/api/v1/admin/events/$eventSlug/bookings'
+      fullPath: '/api/v1/admin/events/$eventSlug/bookings/'
+      preLoaderRoute: typeof ApiV1AdminEventsEventSlugBookingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/events/$eventSlug/bookings/$reference': {
+      id: '/api/v1/admin/events/$eventSlug/bookings/$reference'
+      path: '/api/v1/admin/events/$eventSlug/bookings/$reference'
+      fullPath: '/api/v1/admin/events/$eventSlug/bookings/$reference'
+      preLoaderRoute: typeof ApiV1AdminEventsEventSlugBookingsReferenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/events/$eventSlug/spaces/': {
+      id: '/api/v1/admin/events/$eventSlug/spaces/'
+      path: '/api/v1/admin/events/$eventSlug/spaces'
+      fullPath: '/api/v1/admin/events/$eventSlug/spaces/'
+      preLoaderRoute: typeof ApiV1AdminEventsEventSlugSpacesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/events/$eventSlug/spaces/$spaceId': {
+      id: '/api/v1/admin/events/$eventSlug/spaces/$spaceId'
+      path: '/api/v1/admin/events/$eventSlug/spaces/$spaceId'
+      fullPath: '/api/v1/admin/events/$eventSlug/spaces/$spaceId'
+      preLoaderRoute: typeof ApiV1AdminEventsEventSlugSpacesSpaceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/events/$eventSlug/spaces/validate-placement': {
+      id: '/api/v1/admin/events/$eventSlug/spaces/validate-placement'
+      path: '/api/v1/admin/events/$eventSlug/spaces/validate-placement'
+      fullPath: '/api/v1/admin/events/$eventSlug/spaces/validate-placement'
+      preLoaderRoute: typeof ApiV1AdminEventsEventSlugSpacesValidatePlacementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/events/$eventSlug/bookings/$reference/payment/evidence': {
+      id: '/api/v1/events/$eventSlug/bookings/$reference/payment/evidence'
+      path: '/payment/evidence'
+      fullPath: '/api/v1/events/$eventSlug/bookings/$reference/payment/evidence'
+      preLoaderRoute: typeof ApiV1EventsEventSlugBookingsReferencePaymentEvidenceRouteImport
+      parentRoute: typeof ApiV1EventsEventSlugBookingsReferenceRoute
+    }
+    '/api/v1/events/$eventSlug/bookings/$reference/payment/initiate': {
+      id: '/api/v1/events/$eventSlug/bookings/$reference/payment/initiate'
+      path: '/payment/initiate'
+      fullPath: '/api/v1/events/$eventSlug/bookings/$reference/payment/initiate'
+      preLoaderRoute: typeof ApiV1EventsEventSlugBookingsReferencePaymentInitiateRouteImport
+      parentRoute: typeof ApiV1EventsEventSlugBookingsReferenceRoute
+    }
   }
 }
+
+interface ApiV1EventsEventSlugBookingsReferenceRouteChildren {
+  ApiV1EventsEventSlugBookingsReferencePaymentEvidenceRoute: typeof ApiV1EventsEventSlugBookingsReferencePaymentEvidenceRoute
+  ApiV1EventsEventSlugBookingsReferencePaymentInitiateRoute: typeof ApiV1EventsEventSlugBookingsReferencePaymentInitiateRoute
+}
+
+const ApiV1EventsEventSlugBookingsReferenceRouteChildren: ApiV1EventsEventSlugBookingsReferenceRouteChildren =
+  {
+    ApiV1EventsEventSlugBookingsReferencePaymentEvidenceRoute:
+      ApiV1EventsEventSlugBookingsReferencePaymentEvidenceRoute,
+    ApiV1EventsEventSlugBookingsReferencePaymentInitiateRoute:
+      ApiV1EventsEventSlugBookingsReferencePaymentInitiateRoute,
+  }
+
+const ApiV1EventsEventSlugBookingsReferenceRouteWithChildren =
+  ApiV1EventsEventSlugBookingsReferenceRoute._addFileChildren(
+    ApiV1EventsEventSlugBookingsReferenceRouteChildren,
+  )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -204,6 +1009,60 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   FloorPlanRoute: FloorPlanRoute,
   BookStallIdRoute: BookStallIdRoute,
+  ApiV1UploadsPaymentProofRoute: ApiV1UploadsPaymentProofRoute,
+  ApiV1WebhooksPayfastRoute: ApiV1WebhooksPayfastRoute,
+  ApiV1WebhooksSafepayRoute: ApiV1WebhooksSafepayRoute,
+  ApiV1WebhooksSimulatedRoute: ApiV1WebhooksSimulatedRoute,
+  ApiV1AdminAuthLoginRoute: ApiV1AdminAuthLoginRoute,
+  ApiV1AdminAuthLogoutRoute: ApiV1AdminAuthLogoutRoute,
+  ApiV1AdminAuthRefreshRoute: ApiV1AdminAuthRefreshRoute,
+  ApiV1AdminUsersUserIdRoute: ApiV1AdminUsersUserIdRoute,
+  ApiV1EventsEventSlugAttendeesRoute: ApiV1EventsEventSlugAttendeesRoute,
+  ApiV1EventsEventSlugAvailabilityRoute: ApiV1EventsEventSlugAvailabilityRoute,
+  ApiV1EventsEventSlugFloorPlanRoute: ApiV1EventsEventSlugFloorPlanRoute,
+  ApiV1AdminEventsIndexRoute: ApiV1AdminEventsIndexRoute,
+  ApiV1AdminUsersIndexRoute: ApiV1AdminUsersIndexRoute,
+  ApiV1EventsEventSlugIndexRoute: ApiV1EventsEventSlugIndexRoute,
+  ApiV1AdminBookingsReferenceApproveRoute:
+    ApiV1AdminBookingsReferenceApproveRoute,
+  ApiV1AdminBookingsReferenceExpireRoute:
+    ApiV1AdminBookingsReferenceExpireRoute,
+  ApiV1AdminBookingsReferencePaymentProofUrlRoute:
+    ApiV1AdminBookingsReferencePaymentProofUrlRoute,
+  ApiV1AdminBookingsReferenceReassignRoute:
+    ApiV1AdminBookingsReferenceReassignRoute,
+  ApiV1AdminBookingsReferenceRefundCompleteRoute:
+    ApiV1AdminBookingsReferenceRefundCompleteRoute,
+  ApiV1AdminBookingsReferenceReleaseRoute:
+    ApiV1AdminBookingsReferenceReleaseRoute,
+  ApiV1AdminBookingsReferenceResolveConflictRoute:
+    ApiV1AdminBookingsReferenceResolveConflictRoute,
+  ApiV1AdminBookingsReferenceReturnForCorrectionRoute:
+    ApiV1AdminBookingsReferenceReturnForCorrectionRoute,
+  ApiV1AdminEventsEventSlugAuditRoute: ApiV1AdminEventsEventSlugAuditRoute,
+  ApiV1AdminEventsEventSlugFloorPlanRoute:
+    ApiV1AdminEventsEventSlugFloorPlanRoute,
+  ApiV1AdminEventsEventSlugMetricsRoute: ApiV1AdminEventsEventSlugMetricsRoute,
+  ApiV1AdminEventsEventSlugNotificationsRoute:
+    ApiV1AdminEventsEventSlugNotificationsRoute,
+  ApiV1AdminEventsEventSlugSummaryRoute: ApiV1AdminEventsEventSlugSummaryRoute,
+  ApiV1EventsEventSlugBookingsReferenceRoute:
+    ApiV1EventsEventSlugBookingsReferenceRouteWithChildren,
+  ApiV1EventsEventSlugSpacesSpaceIdRoute:
+    ApiV1EventsEventSlugSpacesSpaceIdRoute,
+  ApiV1AdminEventsEventSlugIndexRoute: ApiV1AdminEventsEventSlugIndexRoute,
+  ApiV1EventsEventSlugBookingsIndexRoute:
+    ApiV1EventsEventSlugBookingsIndexRoute,
+  ApiV1AdminEventsEventSlugBookingsReferenceRoute:
+    ApiV1AdminEventsEventSlugBookingsReferenceRoute,
+  ApiV1AdminEventsEventSlugSpacesSpaceIdRoute:
+    ApiV1AdminEventsEventSlugSpacesSpaceIdRoute,
+  ApiV1AdminEventsEventSlugSpacesValidatePlacementRoute:
+    ApiV1AdminEventsEventSlugSpacesValidatePlacementRoute,
+  ApiV1AdminEventsEventSlugBookingsIndexRoute:
+    ApiV1AdminEventsEventSlugBookingsIndexRoute,
+  ApiV1AdminEventsEventSlugSpacesIndexRoute:
+    ApiV1AdminEventsEventSlugSpacesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
