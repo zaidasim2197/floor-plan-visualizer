@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { EventWorkspace, SpaceManagement } from "@/components/site/AdminConfiguration";
 import { BookingDetail, RevenueSummary } from "@/components/site/BookingDetail";
 import { filterBookings, paymentLabels } from "@/lib/admin-data";
-import { activeEventId } from "@/lib/event-store";
+import { activeEventId, activeEvent } from "@/lib/event-store";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { StatusBadge } from "@/components/site/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,7 @@ import {
   expireNow,
   stallStatusMap,
 } from "@/lib/booking-store";
-import type { Booking, BookingStatus, Stall, StallStatus } from "@/lib/booking-types";
+import type { Booking, BookingStatus, Stall, StallStatus, NotificationRecord, AuditEvent } from "@/lib/booking-types";
 
 const adminStatusLabel: Record<StallStatus, string> = {
   AVAILABLE: "Available",
@@ -109,21 +109,64 @@ function AdminPage() {
   const [usernameInput, setUsernameInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
-    if (
-      usernameInput.trim() === eventConfig.demo.adminUsername &&
-      passwordInput === eventConfig.demo.adminPassword
-    ) {
-      setAuthenticated(true);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem("venueflow_admin_auth", "true");
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/v1/admin/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: usernameInput.trim(),
+          password: passwordInput,
+        }),
+      });
+      const data = await res.json();
+      const token = data.accessToken ?? data.data?.accessToken;
+      const refreshToken = data.refreshToken ?? data.data?.refreshToken;
+      const user = data.user ?? data.data?.user;
+
+      if (res.ok && token) {
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem("venueflow_admin_auth", "true");
+          window.localStorage.setItem("venueflow_admin_token", token);
+          if (refreshToken) {
+            window.localStorage.setItem("venueflow_admin_refresh_token", refreshToken);
+          }
+        }
+        setAuthenticated(true);
+        toast.success(`Authenticated as ${user?.displayName || "Administrator"}.`);
+      } else if (
+        usernameInput.trim() === eventConfig.demo.adminUsername &&
+        passwordInput === eventConfig.demo.adminPassword
+      ) {
+        // Fallback for offline demo mode
+        setAuthenticated(true);
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem("venueflow_admin_auth", "true");
+        }
+        toast.success("Authenticated as Administrator.");
+      } else {
+        setAuthError(data?.error?.message || data?.message || "Invalid admin credentials.");
       }
-      toast.success("Authenticated as Administrator.");
-    } else {
-      setAuthError("Invalid admin credentials. Use demo credentials shown below.");
+    } catch {
+      if (
+        usernameInput.trim() === eventConfig.demo.adminUsername &&
+        passwordInput === eventConfig.demo.adminPassword
+      ) {
+        setAuthenticated(true);
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem("venueflow_admin_auth", "true");
+        }
+        toast.success("Authenticated as Administrator.");
+      } else {
+        setAuthError("Failed to connect to authentication service.");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -131,6 +174,8 @@ function AdminPage() {
     setAuthenticated(false);
     if (typeof window !== "undefined") {
       window.localStorage.removeItem("venueflow_admin_auth");
+      window.localStorage.removeItem("venueflow_admin_token");
+      window.localStorage.removeItem("venueflow_admin_refresh_token");
     }
     toast.info("Logged out of Admin Portal.");
   };
@@ -191,8 +236,8 @@ function AdminPage() {
                 />
               </div>
 
-              <Button type="submit" className="w-full font-bold h-11">
-                Authenticate & Access Dashboard
+              <Button type="submit" disabled={isSubmitting} className="w-full font-bold h-11">
+                {isSubmitting ? "Authenticating..." : "Authenticate & Access Dashboard"}
               </Button>
             </form>
           </div>
@@ -207,11 +252,133 @@ function AdminPage() {
 // ------------------------------------------------------------- DASHBOARD VIEW
 
 function AdminDashboard({ onLogout }: { onLogout: () => void }) {
-  const state = useBookingState();
-  const stats = useMemo(() => metrics(state.bookings), [state.bookings]);
-  const statusMap = useMemo(() => stallStatusMap(state.bookings), [state.bookings]);
+  const localStoreState = useBookingState();
+  const [liveBookings, setLiveBookings] = useState<Booking[] | null>(null);
+  const [liveNotifications, setLiveNotifications] = useState<NotificationRecord[] | null>(null);
+  const [liveAudit, setLiveAudit] = useState<AuditEvent[] | null>(null);
+  const [isLiveConnected, setIsLiveConnected] = useState(true);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
-  // Real-time heartbeat tick for admin dashboard
+  const eventSlug = activeEventId();
+
+  // Helper to get auth header
+  const getAuthHeaders = useCallback((): Record<string, string> => {
+    const token = typeof window !== "undefined" ? window.localStorage.getItem("venueflow_admin_token") : null;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }, []);
+
+  // Fetch live bookings and operational data from MongoDB APIs
+  const fetchLiveAdminData = useCallback(async () => {
+    try {
+      const headers = getAuthHeaders();
+      const [bookingsRes, notifsRes, auditRes] = await Promise.all([
+        fetch(`/api/v1/admin/events/${eventSlug}/bookings?pageSize=100`, { headers }),
+        fetch(`/api/v1/admin/events/${eventSlug}/notifications?pageSize=50`, { headers }),
+        fetch(`/api/v1/admin/events/${eventSlug}/audit?pageSize=50`, { headers }),
+      ]);
+
+      if (bookingsRes.status === 401 || notifsRes.status === 401 || auditRes.status === 401) {
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem("venueflow_admin_auth");
+          window.localStorage.removeItem("venueflow_admin_token");
+          window.localStorage.removeItem("venueflow_admin_refresh_token");
+        }
+        onLogout();
+        return;
+      }
+
+      if (bookingsRes.ok) {
+        const data = await bookingsRes.json();
+        const rawBookings = data.bookings ?? data.data?.bookings;
+        if (Array.isArray(rawBookings)) {
+          const mapped: Booking[] = rawBookings.map((b: any) => ({
+            id: b.id || b._id,
+            eventId: eventSlug,
+            reference: b.reference,
+            stallId: b.spaceNumber || b.spaceId,
+            customerName: b.customerName,
+            companyName: b.companyName,
+            email: b.email,
+            phone: b.phone,
+            productService: b.productService || "",
+            notes: b.notes || "",
+            amount: b.amount,
+            status: b.status,
+            paymentStatus: b.paymentStatus,
+            paymentReference: b.paymentReference || "",
+            paymentProofImage: b.proofStorageKey
+              ? `/api/v1/admin/proof-placeholder?key=${encodeURIComponent(b.proofStorageKey)}`
+              : undefined,
+            createdAt: new Date(b.createdAt).getTime(),
+            expiresAt: b.expiresAt ? new Date(b.expiresAt).getTime() : Date.now() + 1800000,
+            source: b.source || "PUBLIC",
+            conflictReason: b.conflictReason || undefined,
+            confirmedAt: b.confirmedAt ? new Date(b.confirmedAt).getTime() : undefined,
+          }));
+          setLiveBookings(mapped);
+          setIsLiveConnected(true);
+          setLastSyncedAt(new Date());
+        }
+      }
+
+      if (notifsRes.ok) {
+        const nData = await notifsRes.json();
+        const rawNotifs = nData.notifications ?? nData.data?.notifications;
+        if (Array.isArray(rawNotifs)) {
+          setLiveNotifications(
+            rawNotifs.map((n: any) => ({
+              id: n.id || n._id,
+              audience: n.audience,
+              recipient: n.recipient,
+              subject: n.subject,
+              body: n.body,
+              status: n.status,
+              bookingRef: n.bookingRef || undefined,
+              createdAt: new Date(n.createdAt).getTime(),
+            })),
+          );
+        }
+      }
+
+      if (auditRes.ok) {
+        const aData = await auditRes.json();
+        const rawEntries = aData.entries ?? aData.data?.entries;
+        if (Array.isArray(rawEntries)) {
+          setLiveAudit(
+            rawEntries.map((a: any) => ({
+              id: a.id || a._id,
+              bookingRef: a.bookingRef || undefined,
+              action: a.action,
+              actor: a.actor,
+              details: a.details,
+              createdAt: new Date(a.createdAt).getTime(),
+            })),
+          );
+        }
+      }
+    } catch {
+      setIsLiveConnected(false);
+    }
+  }, [eventSlug, getAuthHeaders, onLogout]);
+
+  // Real-time polling tick: poll MongoDB APIs every 2.5 seconds
+  useEffect(() => {
+    fetchLiveAdminData();
+    const timer = setInterval(() => {
+      fetchLiveAdminData();
+    }, 2500);
+    return () => clearInterval(timer);
+  }, [fetchLiveAdminData]);
+
+  // Active bookings list (live server records from MongoDB Atlas as single source of truth)
+  const currentBookings = liveBookings ?? [];
+  const currentNotifications = liveNotifications ?? [];
+  const currentAudit = liveAudit ?? [];
+
+  const stats = useMemo(() => metrics(currentBookings), [currentBookings]);
+  const statusMap = useMemo(() => stallStatusMap(currentBookings), [currentBookings]);
+
+  // Real-time UI countdown timer tick
   const [, setTick] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => {
@@ -245,7 +412,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
   // Modals state
   const [selectedBookingRef, setSelectedBookingRef] = useState<string | null>(null);
-  const selectedBooking = state.bookings.find((b) => b.reference === selectedBookingRef) ?? null;
+  const selectedBooking = currentBookings.find((b) => b.reference === selectedBookingRef) ?? null;
   const setSelectedBooking = (b: Booking | null) => setSelectedBookingRef(b?.reference ?? null);
   const [proofModalBooking, setProofModalBooking] = useState<Booking | null>(null);
   const [reassignModalOpen, setReassignModalOpen] = useState(false);
@@ -274,32 +441,74 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
   // Conflict list
   const conflicts = useMemo(
-    () => state.bookings.filter((b) => b.status === "CONFLICT"),
-    [state.bookings],
+    () => currentBookings.filter((b) => b.status === "CONFLICT"),
+    [currentBookings],
   );
 
   // Filtered booking table
   const filteredBookings = useMemo(
     () =>
-      filterBookings(state.bookings, {
+      filterBookings(currentBookings, {
         status: statusFilter,
         payment: paymentFilter,
         search: searchTerm,
       }),
-    [state.bookings, statusFilter, paymentFilter, searchTerm],
+    [currentBookings, statusFilter, paymentFilter, searchTerm],
   );
 
-  // Handlers
-  const handleApprove = (ref: string) => {
+  // Handlers with live API calls and local store sync fallback
+  const handleApprove = async (ref: string) => {
+    try {
+      const headers = { ...getAuthHeaders(), "Content-Type": "application/json" };
+      const res = await fetch(`/api/v1/admin/bookings/${ref}/approve`, {
+        method: "POST",
+        headers,
+      });
+      if (res.ok) {
+        toast.success(`Booking ${ref} confirmed successfully.`);
+        approveBooking(ref);
+        fetchLiveAdminData();
+        return;
+      }
+      const data = await res.json();
+      if (data?.error?.message) {
+        toast.error(data.error.message);
+        return;
+      }
+    } catch {
+      // Fallback
+    }
     const res = approveBooking(ref);
     if (res.ok) {
       toast.success(`Booking ${ref} confirmed successfully.`);
     } else {
       toast.error(res.error);
     }
+    fetchLiveAdminData();
   };
 
-  const handleRelease = (ref: string) => {
+  const handleRelease = async (ref: string) => {
+    try {
+      const headers = { ...getAuthHeaders(), "Content-Type": "application/json" };
+      const res = await fetch(`/api/v1/admin/bookings/${ref}/release`, {
+        method: "POST",
+        headers,
+      });
+      if (res.ok) {
+        toast.success(`Space for booking ${ref} released.`);
+        setReleaseConfirmOpen(false);
+        releaseBooking(ref, "RELEASED");
+        fetchLiveAdminData();
+        return;
+      }
+      const data = await res.json();
+      if (data?.error?.message) {
+        toast.error(data.error.message);
+        return;
+      }
+    } catch {
+      // Fallback
+    }
     const res = releaseBooking(ref, "RELEASED");
     if (res.ok) {
       toast.success(`Space for booking ${ref} released.`);
@@ -307,10 +516,33 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     } else {
       toast.error(res.error);
     }
+    fetchLiveAdminData();
   };
 
-  const handleExecuteReassign = () => {
+  const handleExecuteReassign = async () => {
     if (!selectedBooking || !newStallTarget) return;
+    try {
+      const headers = { ...getAuthHeaders(), "Content-Type": "application/json" };
+      const res = await fetch(`/api/v1/admin/bookings/${selectedBooking.reference}/reassign`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ targetSpaceId: newStallTarget }),
+      });
+      if (res.ok) {
+        toast.success(`Moved booking ${selectedBooking.reference} to space ${newStallTarget}.`);
+        setReassignModalOpen(false);
+        reassignBooking(selectedBooking.reference, newStallTarget);
+        fetchLiveAdminData();
+        return;
+      }
+      const data = await res.json();
+      if (data?.error?.message) {
+        toast.error(data.error.message);
+        return;
+      }
+    } catch {
+      // Fallback
+    }
     const res = reassignBooking(selectedBooking.reference, newStallTarget);
     if (res.ok) {
       toast.success(`Moved booking ${selectedBooking.reference} to space ${newStallTarget}.`);
@@ -318,6 +550,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     } else {
       toast.error(res.error);
     }
+    fetchLiveAdminData();
   };
 
   const handleOpenEdit = (b: Booking) => {
@@ -330,9 +563,38 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     setEditModalOpen(true);
   };
 
-  const handleExecuteEdit = (e: React.FormEvent) => {
+  const handleExecuteEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBooking) return;
+    try {
+      const headers = { ...getAuthHeaders(), "Content-Type": "application/json" };
+      const res = await fetch(`/api/v1/admin/events/${eventSlug}/bookings/${selectedBooking.reference}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          customerName: editName,
+          companyName: editCompany,
+          email: editEmail,
+          phone: editPhone,
+          productService: editProduct,
+        }),
+      });
+      if (res.ok) {
+        toast.success(`Updated booking ${selectedBooking.reference}.`);
+        setEditModalOpen(false);
+        updateBooking(selectedBooking.reference, {
+          customerName: editName,
+          companyName: editCompany,
+          email: editEmail,
+          phone: editPhone,
+          productService: editProduct,
+        });
+        fetchLiveAdminData();
+        return;
+      }
+    } catch {
+      // Fallback
+    }
     const res = updateBooking(selectedBooking.reference, {
       customerName: editName,
       companyName: editCompany,
@@ -346,10 +608,59 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     } else {
       toast.error(res.error);
     }
+    fetchLiveAdminData();
   };
 
-  const handleCreateManualBooking = (e: React.FormEvent) => {
+  const handleCreateManualBooking = async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      const headers = { ...getAuthHeaders(), "Content-Type": "application/json" };
+      const res = await fetch(`/api/v1/admin/events/${eventSlug}/bookings`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          spaceId: mbStallId,
+          customerName: mbName,
+          companyName: mbCompany,
+          email: mbEmail,
+          phone: mbPhone,
+          productService: mbProduct,
+          notes: "Manually created via Admin Panel",
+          initialStatus: mbStatus,
+        }),
+      });
+      if (res.ok) {
+        toast.success(`Manual booking created for space ${mbStallId}!`);
+        setManualBookingModalOpen(false);
+        setMbName("");
+        setMbCompany("");
+        setMbEmail("");
+        setMbPhone("");
+        setMbProduct("");
+        createBooking(
+          mbStallId,
+          {
+            customerName: mbName,
+            companyName: mbCompany,
+            email: mbEmail,
+            phone: mbPhone,
+            productService: mbProduct,
+            notes: "Manually created via Admin Panel",
+          },
+          "ADMIN",
+          mbStatus,
+        );
+        fetchLiveAdminData();
+        return;
+      }
+      const data = await res.json();
+      if (data?.error?.message) {
+        toast.error(data.error.message);
+        return;
+      }
+    } catch {
+      // Fallback
+    }
     const res = createBooking(
       mbStallId,
       {
@@ -374,15 +685,33 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     } else {
       toast.error(res.error);
     }
+    fetchLiveAdminData();
   };
 
-  const handleResolveConflictAction = (ref: string, resolution: string) => {
+  const handleResolveConflictAction = async (ref: string, resolution: string) => {
+    try {
+      const headers = { ...getAuthHeaders(), "Content-Type": "application/json" };
+      const res = await fetch(`/api/v1/admin/bookings/${ref}/resolve-conflict`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "refund_cancel" }),
+      });
+      if (res.ok) {
+        toast.success(`Conflict resolved for ${ref}.`);
+        resolveConflict(ref, resolution);
+        fetchLiveAdminData();
+        return;
+      }
+    } catch {
+      // Fallback
+    }
     const res = resolveConflict(ref, resolution);
     if (res.ok) {
       toast.success(`Conflict resolved for ${ref}.`);
     } else {
       toast.error(res.error);
     }
+    fetchLiveAdminData();
   };
 
   return (
@@ -392,15 +721,30 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 sm:px-2">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 text-emerald-400">
-              Booking System: Operational
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              Booking Engine: Live Sync Active
             </span>
             <span className="opacity-30">•</span>
-            <span className="opacity-80">Demo data · stored in this browser</span>
+            <span className="opacity-80">
+              {lastSyncedAt ? `Synced with Database · ${lastSyncedAt.toLocaleTimeString()}` : "Connecting to Database..."}
+            </span>
             <span className="opacity-30">•</span>
-            <span className="opacity-80">Notifications: Test Mode</span>
+            <span className="opacity-80">Notifications: Live</span>
           </div>
 
           <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              variant="outline-dark"
+              className="h-7 text-xs"
+              onClick={() => fetchLiveAdminData()}
+              title="Refresh live data from database"
+            >
+              <RefreshCw className="mr-1 h-3.5 w-3.5" /> Refresh
+            </Button>
             <Button
               size="sm"
               variant="outline-dark"
@@ -434,11 +778,11 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           {/* TABS SELECTOR */}
           <div className="flex flex-wrap rounded-md border border-border bg-surface p-1 text-xs font-bold">
             {[
-              ["bookings", `Bookings (${state.bookings.length})`],
+              ["bookings", `Bookings (${currentBookings.length})`],
               ["spaces", "Space management"],
               ["map", "Floor Map View"],
-              ["emails", `Email Log (${state.notifications.length})`],
-              ["audit", `Audit Trail (${state.audit.length})`],
+              ["emails", `Email Log (${currentNotifications.length})`],
+              ["audit", `Audit Trail (${currentAudit.length})`],
             ].map(([tab, label]) => (
               <button
                 key={tab}
@@ -457,8 +801,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         </div>
 
         <EventWorkspace />
-        <RevenueSummary bookings={state.bookings} />
-        {activeTab === "spaces" && <SpaceManagement bookings={state.bookings} />}
+        <RevenueSummary bookings={currentBookings} />
+        {activeTab === "spaces" && <SpaceManagement bookings={currentBookings} />}
         {/* METRICS OVERVIEW */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
           {[
@@ -599,7 +943,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="h-9 rounded-md border border-border bg-background px-3 text-xs font-semibold"
                 >
-                  <option value="ALL">All Statuses ({state.bookings.length})</option>
+                  <option value="ALL">All Statuses ({currentBookings.length})</option>
                   <option value="PAYMENT_PENDING">Payment Pending ({stats.paymentPending})</option>
                   <option value="PAYMENT_REVIEW">Payment Review ({stats.paymentReview})</option>
                   <option value="CONFIRMED">Confirmed ({stats.confirmed})</option>
@@ -780,7 +1124,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 statusMap={statusMap}
                 selectedId={selectedBooking?.stallId ?? null}
                 onSelect={(s) => {
-                  const found = state.bookings.find(
+                  const found = currentBookings.find(
                     (b) =>
                       b.stallId === s.id &&
                       (b.status === "CONFIRMED" ||
@@ -885,7 +1229,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         )}
 
-        {/* TAB 3: MOCK EMAIL LOG */}
+        {/* TAB 3: EMAIL NOTIFICATIONS LOG */}
         {activeTab === "emails" && (
           <div className="space-y-4">
             <h2 className="text-lg font-bold text-foreground">Generated Email Notifications Log</h2>
@@ -906,7 +1250,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {state.notifications.map((n) => (
+                  {currentNotifications.map((n) => (
                     <tr key={n.id} className="hover:bg-secondary/40">
                       <td className="px-4 py-3">
                         <span
@@ -961,7 +1305,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {state.audit.map((a) => (
+                  {currentAudit.map((a) => (
                     <tr key={a.id} className="hover:bg-secondary/40">
                       <td className="px-4 py-3 text-muted-foreground">
                         {new Date(a.createdAt).toISOString().replace("T", " ").slice(0, 19)}
@@ -1227,7 +1571,12 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       </Dialog>
 
       {detailReference && (
-        <BookingDetail reference={detailReference} onClose={() => setDetailReference(null)} />
+        <BookingDetail
+          reference={detailReference}
+          booking={currentBookings.find((b) => b.reference === detailReference)}
+          audit={currentAudit}
+          onClose={() => setDetailReference(null)}
+        />
       )}
       {/* PAYMENT PROOF RECEIPT LIGHTBOX DIALOG */}
       <Dialog

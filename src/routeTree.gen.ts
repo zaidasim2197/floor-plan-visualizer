@@ -17,6 +17,7 @@ import { Route as ConfirmRouteImport } from './routes/confirm'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FloorPlanRouteImport } from './routes/floor-plan'
 import { Route as BookStallIdRouteImport } from './routes/book.$stallId'
+import { Route as ApiV1AdminProofPlaceholderRouteImport } from './routes/api/v1/admin/proof-placeholder'
 import { Route as ApiV1UploadsPaymentProofRouteImport } from './routes/api/v1/uploads/payment-proof'
 import { Route as ApiV1WebhooksPayfastRouteImport } from './routes/api/v1/webhooks/payfast'
 import { Route as ApiV1WebhooksSafepayRouteImport } from './routes/api/v1/webhooks/safepay'
@@ -96,6 +97,12 @@ const BookStallIdRoute = BookStallIdRouteImport.update({
   path: '/book/$stallId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1AdminProofPlaceholderRoute =
+  ApiV1AdminProofPlaceholderRouteImport.update({
+    id: '/api/v1/admin/proof-placeholder',
+    path: '/api/v1/admin/proof-placeholder',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1UploadsPaymentProofRoute =
   ApiV1UploadsPaymentProofRouteImport.update({
     id: '/api/v1/uploads/payment-proof',
@@ -325,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/floor-plan': typeof FloorPlanRoute
   '/book/$stallId': typeof BookStallIdRoute
+  '/api/v1/admin/proof-placeholder': typeof ApiV1AdminProofPlaceholderRoute
   '/api/v1/uploads/payment-proof': typeof ApiV1UploadsPaymentProofRoute
   '/api/v1/webhooks/payfast': typeof ApiV1WebhooksPayfastRoute
   '/api/v1/webhooks/safepay': typeof ApiV1WebhooksSafepayRoute
@@ -373,6 +381,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/floor-plan': typeof FloorPlanRoute
   '/book/$stallId': typeof BookStallIdRoute
+  '/api/v1/admin/proof-placeholder': typeof ApiV1AdminProofPlaceholderRoute
   '/api/v1/uploads/payment-proof': typeof ApiV1UploadsPaymentProofRoute
   '/api/v1/webhooks/payfast': typeof ApiV1WebhooksPayfastRoute
   '/api/v1/webhooks/safepay': typeof ApiV1WebhooksSafepayRoute
@@ -422,6 +431,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/floor-plan': typeof FloorPlanRoute
   '/book/$stallId': typeof BookStallIdRoute
+  '/api/v1/admin/proof-placeholder': typeof ApiV1AdminProofPlaceholderRoute
   '/api/v1/uploads/payment-proof': typeof ApiV1UploadsPaymentProofRoute
   '/api/v1/webhooks/payfast': typeof ApiV1WebhooksPayfastRoute
   '/api/v1/webhooks/safepay': typeof ApiV1WebhooksSafepayRoute
@@ -472,6 +482,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/floor-plan'
     | '/book/$stallId'
+    | '/api/v1/admin/proof-placeholder'
     | '/api/v1/uploads/payment-proof'
     | '/api/v1/webhooks/payfast'
     | '/api/v1/webhooks/safepay'
@@ -520,6 +531,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/floor-plan'
     | '/book/$stallId'
+    | '/api/v1/admin/proof-placeholder'
     | '/api/v1/uploads/payment-proof'
     | '/api/v1/webhooks/payfast'
     | '/api/v1/webhooks/safepay'
@@ -568,6 +580,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/floor-plan'
     | '/book/$stallId'
+    | '/api/v1/admin/proof-placeholder'
     | '/api/v1/uploads/payment-proof'
     | '/api/v1/webhooks/payfast'
     | '/api/v1/webhooks/safepay'
@@ -617,6 +630,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   FloorPlanRoute: typeof FloorPlanRoute
   BookStallIdRoute: typeof BookStallIdRoute
+  ApiV1AdminProofPlaceholderRoute: typeof ApiV1AdminProofPlaceholderRoute
   ApiV1UploadsPaymentProofRoute: typeof ApiV1UploadsPaymentProofRoute
   ApiV1WebhooksPayfastRoute: typeof ApiV1WebhooksPayfastRoute
   ApiV1WebhooksSafepayRoute: typeof ApiV1WebhooksSafepayRoute
@@ -711,6 +725,13 @@ declare module '@tanstack/react-router' {
       path: '/book/$stallId'
       fullPath: '/book/$stallId'
       preLoaderRoute: typeof BookStallIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/admin/proof-placeholder': {
+      id: '/api/v1/admin/proof-placeholder'
+      path: '/api/v1/admin/proof-placeholder'
+      fullPath: '/api/v1/admin/proof-placeholder'
+      preLoaderRoute: typeof ApiV1AdminProofPlaceholderRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/uploads/payment-proof': {
@@ -1009,6 +1030,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   FloorPlanRoute: FloorPlanRoute,
   BookStallIdRoute: BookStallIdRoute,
+  ApiV1AdminProofPlaceholderRoute: ApiV1AdminProofPlaceholderRoute,
   ApiV1UploadsPaymentProofRoute: ApiV1UploadsPaymentProofRoute,
   ApiV1WebhooksPayfastRoute: ApiV1WebhooksPayfastRoute,
   ApiV1WebhooksSafepayRoute: ApiV1WebhooksSafepayRoute,

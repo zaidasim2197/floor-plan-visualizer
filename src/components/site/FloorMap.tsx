@@ -222,7 +222,8 @@ export function FloorMap({ statusMap, selectedId, onSelect, className, isAdminVi
             {stalls.map((s) => {
               const status = statusMap[s.id] ?? "AVAILABLE";
               const selected = selectedId === s.id;
-              const available = status === "AVAILABLE";
+              const isConfirmed = status === "CONFIRMED";
+              const clickable = !isConfirmed || isAdminView;
               return (
                 <g
                   key={s.id}
@@ -230,7 +231,7 @@ export function FloorMap({ statusMap, selectedId, onSelect, className, isAdminVi
                   tabIndex={0}
                   aria-label={`Space ${s.stallNumber}, ${statusLabel[status]}, ${formatMoney(s.price)}`}
                   className="outline-none"
-                  style={{ cursor: available ? "pointer" : "not-allowed" }}
+                  style={{ cursor: clickable ? "pointer" : "not-allowed" }}
                   onClick={() => onSelect?.(s)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -254,7 +255,7 @@ export function FloorMap({ statusMap, selectedId, onSelect, className, isAdminVi
                     fill={selected ? "var(--map-selected)" : (isAdminView ? stallFillAdmin[status] : stallFillPublic[status])}
                     stroke={selected ? "var(--map-selected)" : "var(--map-available-border)"}
                     strokeWidth={selected ? 3 : 1.25}
-                    opacity={available || selected ? 1 : 0.92}
+                    opacity={clickable || selected ? 1 : 0.92}
                   />
                   <text
                     x={s.x + s.w / 2}

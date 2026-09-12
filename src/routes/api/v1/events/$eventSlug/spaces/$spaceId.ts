@@ -1,4 +1,5 @@
 // @ts-nocheck
+import mongoose from "mongoose";
 import { createFileRoute } from "@tanstack/react-router";
 import { connectDB } from "@/server/db";
 import { Event, Space, Booking, ACTIVE_BOOKING_STATUSES } from "@/server/models/index";
@@ -17,10 +18,13 @@ export const Route = createFileRoute("/api/v1/events/$eventSlug/spaces/$spaceId"
 
           await sweepExpiredBookings(String(event._id));
 
+          const isObjectId = mongoose.Types.ObjectId.isValid(params.spaceId);
           const space = await Space.findOne({
-            _id: params.spaceId,
             eventId: event._id,
             isActive: true,
+            ...(isObjectId
+              ? { $or: [{ _id: params.spaceId }, { spaceNumber: params.spaceId }] }
+              : { spaceNumber: params.spaceId }),
           }).lean();
           if (!space) return apiError(404, "SPACE_NOT_FOUND", "Space not found.");
 
@@ -29,7 +33,7 @@ export const Route = createFileRoute("/api/v1/events/$eventSlug/spaces/$spaceId"
             eventId: event._id,
             status: { $in: ACTIVE_BOOKING_STATUSES },
           })
-            .select("status")
+            .select("reference holdToken customerName companyName email amount status paymentStatus expiresAt")
             .lean();
 
           return apiOk({
@@ -44,6 +48,19 @@ export const Route = createFileRoute("/api/v1/events/$eventSlug/spaces/$spaceId"
             w: space.w,
             h: space.h,
             displayStatus: activeBooking ? toDisplayStatus(activeBooking.status) : "AVAILABLE",
+            activeBooking: activeBooking
+              ? {
+                  reference: activeBooking.reference,
+                  holdToken: activeBooking.holdToken ?? null,
+                  customerName: activeBooking.customerName,
+                  companyName: activeBooking.companyName,
+                  email: activeBooking.email,
+                  amount: activeBooking.amount,
+                  status: activeBooking.status,
+                  paymentStatus: activeBooking.paymentStatus,
+                  expiresAt: activeBooking.expiresAt?.toISOString() ?? null,
+                }
+              : null,
           });
         }),
     },

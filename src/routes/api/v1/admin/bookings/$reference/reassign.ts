@@ -1,4 +1,5 @@
 // @ts-nocheck
+import mongoose from "mongoose";
 import { createFileRoute } from "@tanstack/react-router";
 import { connectDB } from "@/server/db";
 import { Booking, Space, AdminUser, Event, ACTIVE_BOOKING_STATUSES } from "@/server/models/index";
@@ -34,7 +35,14 @@ export const Route = createFileRoute("/api/v1/admin/bookings/$reference/reassign
             return apiError(422, "VALIDATION_ERROR", "targetSpaceId is required.");
           }
 
-          const targetSpace = await Space.findOne({ _id: body.targetSpaceId, eventId: event._id }).lean();
+          const isObjectId = mongoose.Types.ObjectId.isValid(body.targetSpaceId);
+          const targetSpace = await Space.findOne({
+            eventId: event._id,
+            isActive: true,
+            ...(isObjectId
+              ? { $or: [{ _id: body.targetSpaceId }, { spaceNumber: body.targetSpaceId }] }
+              : { spaceNumber: body.targetSpaceId }),
+          }).lean();
           if (!targetSpace) return apiError(404, "SPACE_NOT_FOUND", "Target space not found.");
 
           const holder = await Booking.findOne({

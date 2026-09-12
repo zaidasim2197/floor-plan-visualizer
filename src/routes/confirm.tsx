@@ -5,16 +5,28 @@ import { Button } from "@/components/ui/button";
 import { eventConfig } from "@/config/event";
 import { formatMoney } from "@/lib/booking-format";
 import { confirmOnlineCardPayment, useBookingState } from "@/lib/booking-store";
-import { CheckCircle2, ShieldCheck, Printer, ArrowLeft, AlertCircle } from "lucide-react";
+import { CheckCircle2, ShieldCheck, Printer, ArrowLeft, AlertCircle, Sparkles, Check } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/confirm")({
   component: ConfirmPage,
 });
 
-export function ConfirmPage() {
+function ConfirmPage() {
   const state = useBookingState();
   const [ref, setRef] = useState<string | null>(null);
+  const [gatewayName, setGatewayName] = useState<string>("PayFast");
+  const [isSimulated, setIsSimulated] = useState<boolean>(true);
+  const [serverBooking, setServerBooking] = useState<{
+    reference: string;
+    spaceNumber: string;
+    zone?: string;
+    customerName: string;
+    companyName: string;
+    amount: number;
+    status: string;
+    paymentStatus: string;
+  } | null>(null);
   const [status, setStatus] = useState<"success" | "cancel" | "processing">("processing");
 
   useEffect(() => {
@@ -22,7 +34,16 @@ export function ConfirmPage() {
     const searchParams = new URLSearchParams(window.location.search);
     const safepayStatus = searchParams.get("safepay") || searchParams.get("status");
     const payfastStatus = searchParams.get("payfast");
-    const bookingRef = searchParams.get("ref") || searchParams.get("order_id") || searchParams.get("m_payment_id");
+    const gw = searchParams.get("gateway") || (payfastStatus ? "PayFast" : "Safepay");
+    setGatewayName(gw);
+
+    const isSim = payfastStatus === "simulated" || safepayStatus === "simulated" || searchParams.get("simulated") !== "false";
+    setIsSimulated(isSim);
+
+    const bookingRef =
+      searchParams.get("ref") ||
+      searchParams.get("order_id") ||
+      searchParams.get("m_payment_id");
 
     if (bookingRef) {
       setRef(bookingRef);
@@ -31,26 +52,44 @@ export function ConfirmPage() {
     if (safepayStatus === "cancel" || payfastStatus === "cancel") {
       setStatus("cancel");
       toast.error("Payment transaction was cancelled.");
-    } else {
-      // Auto confirm payment
-      const activeBooking = bookingRef ? state.bookings.find((b) => b.reference === bookingRef) : undefined;
-      const targetRef = bookingRef || activeBooking?.reference;
-
-      if (targetRef) {
-        const cardTxnRef = `SAFEPAY-TXN-${Math.floor(100000 + Math.random() * 900000)}`;
-        confirmOnlineCardPayment(targetRef, cardTxnRef);
-        setStatus("success");
-        toast.success(`Payment verified! Booking reference ${targetRef} confirmed.`);
-      } else {
-        setStatus("success");
-      }
+      return;
     }
-  }, [state.bookings]);
+
+    // Auto-confirm payment in local store and check live API
+    if (bookingRef) {
+      const cardTxnRef = `SIMULATED-${gw.toUpperCase()}-${Math.floor(100000 + Math.random() * 900000)}`;
+      confirmOnlineCardPayment(bookingRef, cardTxnRef);
+      setStatus("success");
+      toast.success(`Simulated payment verified! Booking reference ${bookingRef} confirmed.`);
+
+      // Fetch official booking details from MongoDB
+      const slug = eventConfig.slug || "business-expo";
+      fetch(`/api/v1/events/${slug}/bookings/${bookingRef}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.reference) {
+            setServerBooking(data);
+          }
+        })
+        .catch(() => null);
+    } else {
+      setStatus("success");
+    }
+  }, []);
 
   const booking = useMemo(() => {
+    if (serverBooking) {
+      return {
+        ...serverBooking,
+        stallId: serverBooking.spaceNumber,
+      };
+    }
     if (!ref) return state.bookings[state.bookings.length - 1];
-    return state.bookings.find((b) => b.reference === ref) || state.bookings[state.bookings.length - 1];
-  }, [state.bookings, ref]);
+    return (
+      state.bookings.find((b) => b.reference === ref) ||
+      state.bookings[state.bookings.length - 1]
+    );
+  }, [serverBooking, state.bookings, ref]);
 
   if (status === "cancel") {
     return (
@@ -71,19 +110,32 @@ export function ConfirmPage() {
 
   return (
     <SiteLayout>
-      <section className="mx-auto w-full max-w-3xl px-4 py-16 sm:px-6">
+      <section className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 space-y-6">
+        {/* BIG EXPLICIT SIMULATION NOTICE HEADING */}
+        {isSimulated && (
+          <div className="rounded-2xl border-2 border-amber-500/50 bg-amber-500/10 p-6 text-center space-y-2 shadow-sm">
+            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-amber-950 dark:text-amber-200 uppercase">
+              SIMULATED {gatewayName.toUpperCase()} PAYMENT SUCCESSFUL
+            </h1>
+            <p className="text-xs sm:text-sm text-amber-900/80 dark:text-amber-300/90 max-w-lg mx-auto font-medium">
+              This transaction was processed in a simulated sandbox environment. No actual bank charges occurred. Space reservation is successfully confirmed.
+            </p>
+          </div>
+        )}
+
+        {/* CONFIRMATION CARD */}
         <div className="rounded-2xl border border-emerald-500/30 bg-card p-8 sm:p-10 text-center shadow-lg space-y-6">
           <ShieldCheck className="mx-auto h-20 w-20 text-emerald-600 animate-bounce" />
 
           <div>
             <span className="inline-block rounded-full bg-emerald-600/10 px-4 py-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
-              Official Safepay Verified Pass
+              {isSimulated ? `Simulated ${gatewayName} Verified Pass` : "Official Payment Verified Pass"}
             </span>
-            <h1 className="mt-3 text-3xl font-extrabold text-foreground sm:text-4xl">
+            <h2 className="mt-3 text-2xl font-extrabold text-foreground sm:text-3xl">
               Payment Successful & Space Confirmed!
-            </h1>
+            </h2>
             <p className="mt-2 text-sm text-muted-foreground max-w-lg mx-auto">
-              Thank you! Your online gateway transaction has been completed and verified. Your exhibition space is officially assigned.
+              Thank you! Your booking transaction has been completed and confirmed. Your exhibition space is officially locked.
             </p>
           </div>
 

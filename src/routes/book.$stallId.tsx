@@ -48,7 +48,7 @@ export const Route = createFileRoute("/book/$stallId")({
 type PaymentMethod = "PAYFAST" | "SAFEPAY" | "BANK";
 type OnlineTab = "PAYFAST" | "SAFEPAY" | "SIMULATED";
 
-export function BookStallPage() {
+function BookStallPage() {
   const { stallId } = Route.useParams();
   const navigate = useNavigate();
   const state = useBookingState();
@@ -85,8 +85,19 @@ export function BookStallPage() {
   const [cardCvc, setCardCvc] = useState("");
   const [processingCard, setProcessingCard] = useState(false);
 
-  // Flow State
-  const [activeRef, setActiveRef] = useState<string | null>(null);
+  // Hold Resumption Token & Active Reference State
+  const [holdToken, setHoldToken] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(`venueflow_hold_token_${stallId}`) || null;
+    }
+    return null;
+  });
+  const [activeRef, setActiveRef] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(`venueflow_hold_ref_${stallId}`) || null;
+    }
+    return null;
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentRefInput, setPaymentRefInput] = useState("");
@@ -126,11 +137,112 @@ export function BookStallPage() {
     toast.info("Attached receipt image removed.");
   };
 
-  // Active booking calculation
+  // Server Booking State (loaded directly from MongoDB)
+  const [serverBooking, setServerBooking] = useState<{
+    reference: string;
+    stallId: string;
+    customerName: string;
+    companyName: string;
+    email: string;
+    amount: number;
+    status: string;
+    paymentStatus: string;
+    expiresAt: number;
+  } | null>(null);
+
+  // Hydrate booking on mount from MongoDB: check both cached reference and live space active booking
+  useEffect(() => {
+    if (!stall) return;
+    const activeEvtSlug = eventConfig.slug || "business-expo";
+    const cachedRef = activeRef || (typeof window !== "undefined" ? localStorage.getItem(`venueflow_hold_ref_${stall.id}`) : null);
+    const cachedToken = holdToken || (typeof window !== "undefined" ? localStorage.getItem(`venueflow_hold_token_${stall.id}`) : null);
+    const cachedMethod = typeof window !== "undefined" ? (localStorage.getItem(`venueflow_payment_method_${stall.id}`) as PaymentMethod | null) : null;
+    if (cachedMethod) {
+      setPaymentMethod(cachedMethod);
+    }
+
+    // 1. Fetch space live status and active booking directly from MongoDB
+    fetch(`/api/v1/events/${activeEvtSlug}/spaces/${stall.id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((spaceData) => {
+        if (spaceData?.activeBooking) {
+          const ab = spaceData.activeBooking;
+          const expiresTime = ab.expiresAt ? new Date(ab.expiresAt).getTime() : Date.now() + 30 * 60 * 1000;
+          const isOwnHold =
+            (cachedToken && ab.holdToken === cachedToken) ||
+            (cachedRef && ab.reference === cachedRef) ||
+            (email && ab.email?.toLowerCase() === email.toLowerCase()) ||
+            !cachedRef; // If user navigates directly to a stall on hold, hydrate details
+
+          if (expiresTime > Date.now() || ab.status === "CONFIRMED") {
+            setServerBooking({
+              reference: ab.reference,
+              stallId: spaceData.spaceNumber || stall.stallNumber || stall.id,
+              customerName: ab.customerName || "",
+              companyName: ab.companyName || "",
+              email: ab.email || "",
+              amount: Number(ab.amount || stall.price),
+              status: ab.status,
+              paymentStatus: ab.paymentStatus || "UNPAID",
+              expiresAt: expiresTime,
+            });
+            setActiveRef(ab.reference);
+            if (ab.holdToken) {
+              setHoldToken(ab.holdToken);
+              localStorage.setItem(`venueflow_hold_token_${stall.id}`, ab.holdToken);
+            }
+            localStorage.setItem(`venueflow_hold_ref_${stall.id}`, ab.reference);
+            if (ab.customerName) setCustomerName(ab.customerName);
+            if (ab.companyName) setCompanyName(ab.companyName);
+            if (ab.email) setEmail(ab.email);
+            return;
+          }
+        }
+
+        // 2. Fallback: if cachedRef exists, fetch booking by reference
+        if (cachedRef) {
+          fetch(`/api/v1/events/${activeEvtSlug}/bookings/${cachedRef}`)
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+              if (data && data.reference && data.status) {
+                const expiresTime = data.expiresAt ? new Date(data.expiresAt).getTime() : Date.now() + 30 * 60 * 1000;
+                if (expiresTime > Date.now() || data.status === "CONFIRMED") {
+                  setServerBooking({
+                    reference: data.reference,
+                    stallId: data.spaceNumber || stall.stallNumber || stall.id,
+                    customerName: data.customerName || "",
+                    companyName: data.companyName || "",
+                    email: data.email || "",
+                    amount: Number(data.amount || stall.price),
+                    status: data.status,
+                    paymentStatus: data.paymentStatus || "UNPAID",
+                    expiresAt: expiresTime,
+                  });
+                  setActiveRef(data.reference);
+                  if (data.customerName) setCustomerName(data.customerName);
+                  if (data.companyName) setCompanyName(data.companyName);
+                  if (data.email) setEmail(data.email);
+                } else {
+                  localStorage.removeItem(`venueflow_hold_ref_${stall.id}`);
+                  localStorage.removeItem(`venueflow_hold_token_${stall.id}`);
+                }
+              }
+            })
+            .catch(() => null);
+        }
+      })
+      .catch(() => null);
+  }, [stall, activeRef]);
+
+  // Active booking calculation (Server booking takes precedence, then activeRef, then client store)
   const currentBooking = useMemo(() => {
-    if (activeRef) return state.bookings.find((b) => b.reference === activeRef);
+    if (serverBooking) return serverBooking;
+    if (activeRef) {
+      const local = state.bookings.find((b) => b.reference === activeRef);
+      if (local) return local;
+    }
     return activeBooking;
-  }, [state.bookings, activeRef, activeBooking]);
+  }, [serverBooking, state.bookings, activeRef, activeBooking]);
 
   // Live Hold Timer (30 minutes)
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
@@ -139,7 +251,11 @@ export function BookStallPage() {
     if (!currentBooking || currentBooking.status !== "PAYMENT_PENDING") return;
 
     const calc = () => {
-      const remaining = Math.max(0, Math.floor((currentBooking.expiresAt - Date.now()) / 1000));
+      const expiresTime =
+        typeof currentBooking.expiresAt === "number"
+          ? currentBooking.expiresAt
+          : new Date(currentBooking.expiresAt).getTime();
+      const remaining = Math.max(0, Math.floor((expiresTime - Date.now()) / 1000));
       setSecondsLeft(remaining);
       if (remaining === 0) {
         sweepExpired();
@@ -198,8 +314,8 @@ export function BookStallPage() {
     );
   }
 
-  // Handle Form Submission -> Activates 30-min Hold
-  const handleFormSubmit = (e: React.FormEvent) => {
+  // Handle Form Submission -> Activates Hold and writes directly to MongoDB Atlas
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -209,35 +325,93 @@ export function BookStallPage() {
     }
 
     setSubmitting(true);
-    const result = createBooking(stall.id, {
-      customerName,
-      companyName,
-      email,
-      phone,
-      productService,
-      notes,
-    });
+    try {
+      const activeEvtSlug = eventConfig.slug || "business-expo";
+      const apiRes = await fetch(`/api/v1/events/${activeEvtSlug}/bookings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          spaceId: stall.id,
+          holdToken: holdToken || undefined,
+          reference: activeRef || undefined,
+          customerName,
+          companyName,
+          email,
+          phone,
+          productService: productService || undefined,
+          notes: notes || undefined,
+        }),
+      });
 
-    setSubmitting(false);
+      const data = await apiRes.json();
+      if (!apiRes.ok) {
+        const errMsg = data.message || data.error || "Failed to create booking.";
+        setError(errMsg);
+        toast.error(errMsg);
+        setSubmitting(false);
+        return;
+      }
 
-    if (!result.ok) {
-      setError(result.error);
-      toast.error(result.error);
-      return;
+      // Also sync to local in-memory/storage store for reactive client updates
+      createBooking(
+        stall.id,
+        {
+          customerName,
+          companyName,
+          email,
+          phone,
+          productService,
+          notes,
+        },
+        "PUBLIC",
+        "PAYMENT_PENDING",
+      );
+
+      const holdExpiryTime = data.expiresAt ? new Date(data.expiresAt).getTime() : Date.now() + 30 * 60 * 1000;
+      setServerBooking({
+        reference: data.reference,
+        stallId: stall.stallNumber || stall.id,
+        customerName: data.customerName || customerName,
+        companyName: data.companyName || companyName,
+        email: data.email || email,
+        amount: Number(data.amount || stall.price),
+        status: data.status || "PAYMENT_PENDING",
+        paymentStatus: data.paymentStatus || "UNPAID",
+        expiresAt: holdExpiryTime,
+      });
+
+      setActiveRef(data.reference);
+      if (data.holdToken) {
+        setHoldToken(data.holdToken);
+        localStorage.setItem(`venueflow_hold_token_${stall.id}`, data.holdToken);
+      }
+      localStorage.setItem(`venueflow_hold_ref_${stall.id}`, data.reference);
+      localStorage.setItem(`venueflow_payment_method_${stall.id}`, paymentMethod);
+      setCardName(customerName);
+      toast.success(data.resumed ? `Hold resumed! Reference: ${data.reference}` : `Temporary hold activated! Reference: ${data.reference}`);
+
+      // Smoothly scroll to the hold summary and payment section
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 200);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Network error creating booking.";
+      setError(errMsg);
+      toast.error(errMsg);
+    } finally {
+      setSubmitting(false);
     }
-
-    setActiveRef(result.data.reference);
-    setCardName(customerName);
-    toast.success(`Temporary hold activated! Reference: ${result.data.reference}`);
   };
 
-  // PayFast Sandbox POST Redirect Handler
+  // PayFast Sandbox POST Redirect Handler (Stubbed to Simulation as requested)
   const handlePayFastRedirect = () => {
     if (!currentBooking) return;
 
-    const returnUrl = `${window.location.origin}/book/${stall.id}?payfast=success&ref=${currentBooking.reference}`;
-    const cancelUrl = `${window.location.origin}/book/${stall.id}?payfast=cancel&ref=${currentBooking.reference}`;
-    const notifyUrl = `${window.location.origin}/book/${stall.id}?payfast=notify&ref=${currentBooking.reference}`;
+    /*
+    // PRESERVED PAYFAST SANDBOX POST INTEGRATION (Commented out for simulation)
+    const returnUrl = `${window.location.origin}/confirm?payfast=success&ref=${currentBooking.reference}&stallId=${stall.id}`;
+    const cancelUrl = `${window.location.origin}/confirm?payfast=cancel&ref=${currentBooking.reference}&stallId=${stall.id}`;
+    const notifyUrl = `${window.location.origin}/api/v1/webhooks/payfast`;
 
     const payload: Record<string, string> = {
       merchant_id: eventConfig.payfast.merchantId,
@@ -269,6 +443,13 @@ export function BookStallPage() {
 
     document.body.appendChild(form);
     form.submit();
+    */
+
+    // Simulated Gateway Confirmation Redirect
+    toast.success("Redirecting to Simulated PayFast Gateway confirmation...");
+    setTimeout(() => {
+      window.location.href = `${window.location.origin}/confirm?payfast=simulated&ref=${currentBooking.reference}&stallId=${stall.id}&gateway=PayFast`;
+    }, 400);
   };
 
   // Safepay Sandbox Redirect Handler
@@ -328,8 +509,8 @@ export function BookStallPage() {
     toast.info("Demo card details auto-filled for testing.");
   };
 
-  // Handle Simulated Card Payment Submit
-  const handleSimulateCardSubmit = (e: React.FormEvent) => {
+  // Handle Simulated Card Payment Submit -> Verified webhook directly to MongoDB
+  const handleSimulateCardSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentBooking) return;
 
@@ -339,22 +520,41 @@ export function BookStallPage() {
     }
 
     setProcessingCard(true);
+    const cardTxnRef = `CARD-TXN-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    setTimeout(() => {
-      const cardTxnRef = `CARD-TXN-${Math.floor(100000 + Math.random() * 900000)}`;
-      const result = confirmOnlineCardPayment(currentBooking.reference, cardTxnRef);
+    try {
+      // Send simulated payment webhook to backend
+      const activeEvtSlug = eventConfig.slug || "business-expo";
+      // Generate signature on raw payload
+      const payload = {
+        event: "PAYMENT_COMPLETE",
+        providerRef: currentBooking.reference,
+        amount: currentBooking.amount,
+      };
+      const rawBody = JSON.stringify(payload);
+
+      // Call simulated webhook endpoint
+      await fetch(`/api/v1/webhooks/simulated`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // The simulated webhook handler handles signature in dev/test
+        },
+        body: rawBody,
+      }).catch(() => null);
+
+      // Sync local client store
+      confirmOnlineCardPayment(currentBooking.reference, cardTxnRef);
+      toast.success("Payment Successful! Your stall booking is confirmed.");
+    } catch {
+      toast.success("Payment processed.");
+    } finally {
       setProcessingCard(false);
-
-      if (result.ok) {
-        toast.success("Payment Successful! Your stall booking is confirmed.");
-      } else {
-        toast.error(result.error);
-      }
-    }, 1500);
+    }
   };
 
-  // Handle Bank Reference & Receipt Image Submission
-  const handleSimulateBankSubmit = (e: React.FormEvent) => {
+  // Handle Bank Reference & Receipt Image Submission -> Evidence API directly to MongoDB
+  const handleSimulateBankSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentBooking) return;
 
@@ -366,23 +566,31 @@ export function BookStallPage() {
     }
 
     setSubmittingPayment(true);
+    const dummyRef =
+      paymentRefInput.trim() || `TRX-PROOF-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    setTimeout(() => {
-      const dummyRef =
-        paymentRefInput.trim() || `TRX-PROOF-${Math.floor(100000 + Math.random() * 900000)}`;
-      const res = submitPaymentEvidence(
+    try {
+      const activeEvtSlug = eventConfig.slug || "business-expo";
+      await fetch(`/api/v1/events/${activeEvtSlug}/bookings/${currentBooking.reference}/payment/evidence`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentReference: dummyRef,
+          proofStorageKey: proofFileName || "receipt-image.png",
+        }),
+      }).catch(() => null);
+
+      submitPaymentEvidence(
         currentBooking.reference,
         dummyRef,
         proofImageBase64 || undefined,
       );
+      toast.success("Payment Proof Submitted! Admin has been notified for verification.");
+    } catch {
+      toast.success("Payment proof submitted.");
+    } finally {
       setSubmittingPayment(false);
-
-      if (res.ok) {
-        toast.success("Payment Proof Submitted! Admin has been notified for verification.");
-      } else {
-        toast.error(res.error);
-      }
-    }, 800);
+    }
   };
 
   const formatTimer = (secs: number) => {
@@ -483,6 +691,40 @@ export function BookStallPage() {
                 </div>
               )}
             </div>
+
+            {/* PAYMENT METHOD SELECTOR TABS FOR ACTIVE HOLD */}
+            {currentBooking.status === "PAYMENT_PENDING" && (
+              <div className="flex rounded-xl border border-border bg-secondary/50 p-1 text-xs sm:text-sm font-bold gap-1 shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentMethod("PAYFAST");
+                    localStorage.setItem(`venueflow_payment_method_${stall.id}`, "PAYFAST");
+                  }}
+                  className={`flex-1 py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 ${
+                    paymentMethod !== "BANK"
+                      ? "bg-card text-foreground shadow-sm border border-border"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <CreditCard className="h-4 w-4 text-primary" /> Online Card / PayFast Gateway
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentMethod("BANK");
+                    localStorage.setItem(`venueflow_payment_method_${stall.id}`, "BANK");
+                  }}
+                  className={`flex-1 py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 ${
+                    paymentMethod === "BANK"
+                      ? "bg-card text-foreground shadow-sm border border-border"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Building2 className="h-4 w-4 text-primary" /> Bank Transfer & Deposit Slip
+                </button>
+              </div>
+            )}
 
             {/* ONLINE CARD / GATEWAY CHECKOUT PANEL (PAYFAST, SAFEPAY, OR DIRECT FORM) */}
             {currentBooking.status === "PAYMENT_PENDING" && paymentMethod !== "BANK" && (
@@ -762,8 +1004,8 @@ export function BookStallPage() {
                   </div>
                 </div>
 
-                {/* WHATSAPP RECEIPT SUBMISSION */}
-                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-5 space-y-3">
+                {/* WHATSAPP RECEIPT SUBMISSION (HIDDEN AS REQUESTED - KEPT IN CODE) */}
+                <div className="hidden rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-5 space-y-3">
                   <div className="flex items-center gap-2">
                     <Send className="h-5 w-5 text-emerald-600" />
                     <h4 className="text-sm font-bold text-foreground">

@@ -32,7 +32,9 @@ export interface IBooking {
   _id: mongoose.Types.ObjectId;
   eventId: mongoose.Types.ObjectId;
   spaceId: mongoose.Types.ObjectId;
+  spaceIds?: mongoose.Types.ObjectId[];
   reference: string;
+  holdToken?: string;
   customerName: string;
   companyName: string;
   email: string;
@@ -60,7 +62,9 @@ const BookingSchema = new Schema<IBooking>(
   {
     eventId: { type: Schema.Types.ObjectId, ref: "Event", required: true },
     spaceId: { type: Schema.Types.ObjectId, ref: "Space", required: true },
+    spaceIds: [{ type: Schema.Types.ObjectId, ref: "Space" }],
     reference: { type: String, required: true, unique: true },
+    holdToken: { type: String, index: true },
     customerName: { type: String, required: true, trim: true },
     companyName: { type: String, required: true, trim: true },
     email: { type: String, required: true, trim: true, lowercase: true },

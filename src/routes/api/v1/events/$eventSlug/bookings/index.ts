@@ -1,4 +1,4 @@
-// @ts-nocheck
+import mongoose from "mongoose";
 import { createFileRoute } from "@tanstack/react-router";
 import { connectDB } from "@/server/db";
 import { Event, Space, Booking, ACTIVE_BOOKING_STATUSES } from "@/server/models/index";
@@ -10,6 +10,8 @@ import { z } from "zod";
 
 const CreateBookingSchema = z.object({
   spaceId: z.string().min(1),
+  holdToken: z.string().trim().optional(),
+  reference: z.string().trim().optional(),
   customerName: z.string().trim().min(1).max(120),
   companyName: z.string().trim().min(1).max(120),
   email: z.string().trim().email(),
@@ -39,15 +41,73 @@ export const Route = createFileRoute("/api/v1/events/$eventSlug/bookings/")({
           // Lazy expiry sweep before availability check
           await sweepExpiredBookings(String(event._id));
 
+          // Allow spaceId to match either MongoDB ObjectId or spaceNumber (e.g. "A02", "B01")
+          const isObjectId = mongoose.Types.ObjectId.isValid(body.spaceId);
           const space = await Space.findOne({
-            _id: body.spaceId,
             eventId: event._id,
             isActive: true,
+            ...(isObjectId
+              ? { $or: [{ _id: body.spaceId }, { spaceNumber: body.spaceId }] }
+              : { spaceNumber: body.spaceId }),
           }).lean();
           if (!space) return apiError(404, "SPACE_NOT_FOUND", "Space not found.");
 
           const holdMs = event.booking.paymentPendingMinutes * 60 * 1000;
           const expiresAt = new Date(Date.now() + holdMs);
+          const incomingHoldToken = body.holdToken || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36));
+
+          // Check if there is already an active booking for this space
+          const existingActiveBooking = await Booking.findOne({
+            eventId: event._id,
+            spaceId: space._id,
+            status: { $in: ACTIVE_BOOKING_STATUSES },
+          });
+
+          if (existingActiveBooking) {
+            // Check if this is the SAME user trying to resume or update their existing hold
+            const isSameUser =
+              existingActiveBooking.status === "PAYMENT_PENDING" &&
+              ((body.holdToken && existingActiveBooking.holdToken === body.holdToken) ||
+                (body.reference && existingActiveBooking.reference === body.reference) ||
+                existingActiveBooking.email.toLowerCase() === body.email.toLowerCase());
+
+            if (isSameUser) {
+              // Update customer details, refresh hold expiry, and preserve/set holdToken
+              existingActiveBooking.customerName = body.customerName;
+              existingActiveBooking.companyName = body.companyName;
+              existingActiveBooking.email = body.email.toLowerCase();
+              existingActiveBooking.phone = body.phone;
+              if (body.productService !== undefined) existingActiveBooking.productService = body.productService;
+              if (body.notes !== undefined) existingActiveBooking.notes = body.notes;
+              existingActiveBooking.expiresAt = expiresAt;
+              if (!existingActiveBooking.holdToken) {
+                existingActiveBooking.holdToken = incomingHoldToken;
+              }
+              await existingActiveBooking.save();
+
+              return apiOk({
+                reference: existingActiveBooking.reference,
+                holdToken: existingActiveBooking.holdToken,
+                bookingId: String(existingActiveBooking._id),
+                spaceId: String(existingActiveBooking.spaceId),
+                spaceNumber: space.spaceNumber,
+                customerName: existingActiveBooking.customerName,
+                companyName: existingActiveBooking.companyName,
+                amount: existingActiveBooking.amount,
+                currency: event.currency,
+                status: existingActiveBooking.status,
+                paymentStatus: existingActiveBooking.paymentStatus,
+                expiresAt: existingActiveBooking.expiresAt.toISOString(),
+                createdAt: existingActiveBooking.createdAt.toISOString(),
+                resumed: true,
+              }, 200);
+            }
+
+            // Conflicting active booking held by someone else
+            return apiError(409, "SPACE_NO_LONGER_AVAILABLE",
+              "This space is currently on hold or booked by another customer. Please choose another space.");
+          }
+
           const reference = generateReference(event.slug);
 
           // Atomic insert — the partial unique index rejects a duplicate active booking
@@ -58,6 +118,7 @@ export const Route = createFileRoute("/api/v1/events/$eventSlug/bookings/")({
                 eventId: event._id,
                 spaceId: space._id,
                 reference,
+                holdToken: incomingHoldToken,
                 customerName: body.customerName,
                 companyName: body.companyName,
                 email: body.email,
@@ -95,6 +156,7 @@ export const Route = createFileRoute("/api/v1/events/$eventSlug/bookings/")({
 
           return apiOk({
             reference: booking.reference,
+            holdToken: booking.holdToken,
             bookingId: String(booking._id),
             spaceId: String(booking.spaceId),
             spaceNumber: space.spaceNumber,
@@ -106,6 +168,7 @@ export const Route = createFileRoute("/api/v1/events/$eventSlug/bookings/")({
             paymentStatus: booking.paymentStatus,
             expiresAt: booking.expiresAt.toISOString(),
             createdAt: booking.createdAt.toISOString(),
+            resumed: false,
           }, 201);
         }),
     },

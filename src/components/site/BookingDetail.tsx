@@ -64,9 +64,20 @@ export function RevenueSummary({ bookings }: { bookings: Booking[] }) {
   );
 }
 
-export function BookingDetail({ reference, onClose }: { reference: string; onClose: () => void }) {
+export function BookingDetail({
+  reference,
+  onClose,
+  booking: explicitBooking,
+  audit: explicitAudit,
+}: {
+  reference: string;
+  onClose: () => void;
+  booking?: Booking | null;
+  audit?: typeof state.audit;
+}) {
   const state = useBookingState();
-  const booking = state.bookings.find((b) => b.reference === reference);
+  const booking = explicitBooking ?? state.bookings.find((b) => b.reference === reference);
+  const auditEntries = explicitAudit ?? state.audit;
   const [transaction, setTransaction] = useState("");
   const [proof, setProof] = useState<string>();
   const [reason, setReason] = useState("");
@@ -240,7 +251,7 @@ export function BookingDetail({ reference, onClose }: { reference: string; onClo
         <div className="border-t border-border pt-4">
           <h3 className="text-sm font-semibold">Activity timeline</h3>
           <ol className="mt-3 space-y-4">
-            {state.audit
+            {auditEntries
               .filter((a) => a.bookingRef === reference)
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((a) => (
