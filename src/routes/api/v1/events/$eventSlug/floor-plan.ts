@@ -38,6 +38,7 @@ export const Route = createFileRoute("/api/v1/events/$eventSlug/floor-plan")({
 
           const spacesWithStatus = spaces.map((s) => ({
             id: String(s._id),
+            stallId: s.spaceNumber,
             spaceNumber: s.spaceNumber,
             zone: s.zone,
             category: s.category,

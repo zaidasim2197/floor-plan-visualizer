@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2, AlertTriangle, Shield, HelpCircle } from "lucide-react";
 import { FloorMap, FloorMapLegend } from "@/components/site/FloorMap";
@@ -15,7 +15,7 @@ import {
 import { eventConfig, whatsappLink } from "@/config/event";
 import { stalls } from "@/data/floor-plan";
 import { formatMoney } from "@/lib/booking-format";
-import type { Stall } from "@/lib/booking-types";
+import type { Stall, StallStatus } from "@/lib/booking-types";
 import { stallStatusMap, useBookingState, metrics } from "@/lib/booking-store";
 
 const title = "Interactive Floor Plan — Book Your Exhibition Space";
@@ -37,8 +37,64 @@ export const Route = createFileRoute("/floor-plan")({
 function FloorPlanPage() {
   const state = useBookingState();
   const navigate = useNavigate();
-  const statusMap = useMemo(() => stallStatusMap(state.bookings), [state.bookings]);
-  const stats = useMemo(() => metrics(state.bookings), [state.bookings]);
+  const [serverStatusMap, setServerStatusMap] = useState<Record<string, StallStatus>>({});
+
+  // Real-time server sync from MongoDB API
+  useEffect(() => {
+    let mounted = true;
+    const fetchLiveStatus = async () => {
+      try {
+        const slug = eventConfig.slug || "business-expo";
+        const res = await fetch(`/api/v1/events/${slug}/floor-plan`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.spaces && mounted) {
+          const map: Record<string, StallStatus> = {};
+          data.spaces.forEach((sp: { spaceNumber: string; displayStatus: string }) => {
+            const rawStatus = sp.displayStatus;
+            map[sp.spaceNumber] =
+              rawStatus === "ON_HOLD"
+                ? "PAYMENT_PENDING"
+                : rawStatus === "CONFIRMED"
+                  ? "CONFIRMED"
+                  : "AVAILABLE";
+          });
+          setServerStatusMap(map);
+        }
+      } catch {
+        /* fallback to local store */
+      }
+    };
+
+    fetchLiveStatus();
+    const interval = setInterval(fetchLiveStatus, 2000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const statusMap = useMemo(() => {
+    // Live MongoDB space statuses as single source of truth
+    const map: Record<string, StallStatus> = {};
+    stalls.forEach((s) => {
+      map[s.id] = serverStatusMap[s.id] ?? serverStatusMap[s.stallNumber] ?? "AVAILABLE";
+    });
+    return map;
+  }, [serverStatusMap]);
+
+  const stats = useMemo(() => {
+    const count = (s: StallStatus) => Object.values(statusMap).filter((v) => v === s).length;
+    return {
+      total: stalls.length,
+      available: count("AVAILABLE"),
+      paymentPending: count("PAYMENT_PENDING"),
+      paymentReview: count("PAYMENT_REVIEW"),
+      confirmed: count("CONFIRMED"),
+      expired: 0,
+      conflicts: 0,
+    };
+  }, [statusMap]);
 
   const firstAvailableStall = useMemo(
     () => stalls.find((s) => (statusMap[s.id] ?? "AVAILABLE") === "AVAILABLE") ?? null,
@@ -59,7 +115,7 @@ function FloorPlanPage() {
 
   const handleSelectStall = (stall: Stall) => {
     const status = statusMap[stall.id] ?? "AVAILABLE";
-    if (status !== "AVAILABLE") return; // Only allow selection and modal popup for AVAILABLE stalls
+    if (status === "CONFIRMED") return; // Only block CONFIRMED stalls from selection
     setSelected(stall);
     setMobileDrawerOpen(true);
   };
@@ -166,8 +222,20 @@ function FloorPlanPage() {
                             >
                               Book Space
                             </Button>
+                          ) : status === "PAYMENT_PENDING" ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 sm:h-8 text-xs font-bold border-amber-500 text-amber-600 hover:bg-amber-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStartBooking(s.id);
+                              }}
+                            >
+                              View / Resume
+                            </Button>
                           ) : (
-                            <span className="text-xs text-muted-foreground italic">Unavailable</span>
+                            <span className="text-xs text-muted-foreground italic">Booked</span>
                           )}
                         </td>
                       </tr>
@@ -216,9 +284,16 @@ function FloorPlanPage() {
                     >
                       Reserve Space {selected.stallNumber} <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
+                  ) : selectedStatus === "PAYMENT_PENDING" ? (
+                    <Button
+                      className="w-full h-11 font-bold text-sm bg-amber-600 hover:bg-amber-700 text-white"
+                      onClick={() => handleStartBooking(selected.id)}
+                    >
+                      Resume / Complete Hold ({selected.stallNumber}) <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
                   ) : (
                     <Button className="w-full h-11 font-bold text-sm" disabled>
-                      Currently Unavailable
+                      Currently Unavailable (Booked)
                     </Button>
                   )}
 
@@ -286,9 +361,19 @@ function FloorPlanPage() {
                     >
                       Reserve Space {selected.stallNumber} <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
+                  ) : selectedStatus === "PAYMENT_PENDING" ? (
+                    <Button
+                      className="w-full h-11 font-bold text-sm bg-amber-600 hover:bg-amber-700 text-white"
+                      onClick={() => {
+                        setMobileDrawerOpen(false);
+                        handleStartBooking(selected.id);
+                      }}
+                    >
+                      Resume / Complete Hold ({selected.stallNumber}) <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
                   ) : (
                     <Button className="w-full h-11 font-bold text-sm" disabled>
-                      Currently Unavailable
+                      Currently Unavailable (Booked)
                     </Button>
                   )}
 

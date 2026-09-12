@@ -10,7 +10,6 @@
  *  - One SUPER_ADMIN user (credentials from SEED_ADMIN_USERNAME / SEED_ADMIN_PASSWORD env)
  */
 
-import "dotenv/config";
 import mongoose from "mongoose";
 import { connectDB } from "./db";
 import { hashPassword } from "./lib/auth";

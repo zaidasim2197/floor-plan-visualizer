@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -17,6 +17,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { CountdownTimer } from "@/components/site/CountdownTimer";
 import { Button } from "@/components/ui/button";
 import { eventConfig, whatsappLink } from "@/config/event";
+import { stalls } from "@/data/floor-plan";
 import { metrics, stallStatusMap, useBookingState } from "@/lib/booking-store";
 
 const title = `${eventConfig.name} — Exhibition Space Booking`;
@@ -36,8 +37,59 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const state = useBookingState();
-  const statusMap = useMemo(() => stallStatusMap(state.bookings), [state.bookings]);
-  const stats = useMemo(() => metrics(state.bookings), [state.bookings]);
+  const [serverStatusMap, setServerStatusMap] = useState<Record<string, import("@/lib/booking-types").StallStatus>>({});
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchLiveStatus = async () => {
+      try {
+        const slug = eventConfig.slug || "business-expo";
+        const res = await fetch(`/api/v1/events/${slug}/floor-plan`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.spaces && mounted) {
+          const map: Record<string, import("@/lib/booking-types").StallStatus> = {};
+          data.spaces.forEach((sp: { spaceNumber: string; displayStatus: string }) => {
+            const rawStatus = sp.displayStatus;
+            map[sp.spaceNumber] =
+              rawStatus === "ON_HOLD"
+                ? "PAYMENT_PENDING"
+                : rawStatus === "CONFIRMED"
+                  ? "CONFIRMED"
+                  : "AVAILABLE";
+          });
+          setServerStatusMap(map);
+        }
+      } catch {
+        /* fallback */
+      }
+    };
+
+    fetchLiveStatus();
+    const interval = setInterval(fetchLiveStatus, 2000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const localStatusMap = useMemo(() => stallStatusMap(state.bookings), [state.bookings]);
+  const statusMap = useMemo(() => {
+    return { ...localStatusMap, ...serverStatusMap };
+  }, [localStatusMap, serverStatusMap]);
+
+  const stats = useMemo(() => {
+    const count = (s: import("@/lib/booking-types").StallStatus) => Object.values(statusMap).filter((v) => v === s).length;
+    return {
+      total: stalls.length,
+      available: count("AVAILABLE"),
+      paymentPending: count("PAYMENT_PENDING"),
+      paymentReview: count("PAYMENT_REVIEW"),
+      confirmed: count("CONFIRMED"),
+      expired: 0,
+      conflicts: 0,
+    };
+  }, [statusMap]);
 
   return (
     <SiteLayout>

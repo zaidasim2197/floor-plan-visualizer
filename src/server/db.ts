@@ -1,4 +1,12 @@
+import dns from "node:dns";
 import mongoose from "mongoose";
+
+// Resolve MongoDB Atlas SRV records reliably in local Node environments
+try {
+  dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1", "1.0.0.1"]);
+} catch {
+  // Ignore in environments where setting DNS servers is restricted
+}
 
 let connectionPromise: Promise<typeof mongoose> | null = null;
 

@@ -1,4 +1,5 @@
 // @ts-nocheck
+import mongoose from "mongoose";
 import { createFileRoute } from "@tanstack/react-router";
 import { connectDB } from "@/server/db";
 import { Event, Space, Booking, AdminUser, ACTIVE_BOOKING_STATUSES } from "@/server/models/index";
@@ -126,7 +127,14 @@ export const Route = createFileRoute("/api/v1/admin/events/$eventSlug/bookings/"
 
           await sweepExpiredBookings(String(event._id));
 
-          const space = await Space.findOne({ _id: body.spaceId, eventId: event._id }).lean();
+          const isObjectId = mongoose.Types.ObjectId.isValid(body.spaceId);
+          const space = await Space.findOne({
+            eventId: event._id,
+            isActive: true,
+            ...(isObjectId
+              ? { $or: [{ _id: body.spaceId }, { spaceNumber: body.spaceId }] }
+              : { spaceNumber: body.spaceId }),
+          }).lean();
           if (!space) return apiError(404, "SPACE_NOT_FOUND", "Space not found.");
 
           const holdMs = event.booking.paymentPendingMinutes * 60 * 1000;

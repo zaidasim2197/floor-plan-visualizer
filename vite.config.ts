@@ -12,7 +12,18 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: {
+    alias: {
+      "punycode/": "punycode",
+    },
+  },
   vite: {
+    resolve: {
+      alias: [
+        { find: "punycode/", replacement: "punycode" },
+        { find: /^punycode\/$/, replacement: "punycode" },
+      ],
+    },
     ssr: {
       // CJS packages that must be treated as Node externals in the SSR/server
       // route environment — Vite's ESM module runner cannot inline-transform them.
