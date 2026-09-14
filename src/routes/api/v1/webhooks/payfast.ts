@@ -21,8 +21,9 @@ export const Route = createFileRoute("/api/v1/webhooks/payfast")({
         const event = await Event.findOne({ slug: slugGuess }).lean()
           ?? await Event.findOne({}).lean(); // fallback for single-event setups
 
+        const envSlug = event?.slug ? event.slug.replace(/-/g, "_") : "";
         const passphrase = event
-          ? (process.env[`PAYFAST_PASSPHRASE_${event.slug}`] ?? "")
+          ? (process.env[`PAYFAST_PASSPHRASE_${envSlug}`] ?? process.env[`PAYFAST_PASSPHRASE_${event.slug}`] ?? "")
           : "";
 
         const result = verifyPayfastWebhook(rawBody, passphrase);

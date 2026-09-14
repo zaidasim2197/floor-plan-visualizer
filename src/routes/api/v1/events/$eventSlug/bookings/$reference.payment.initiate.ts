@@ -51,9 +51,10 @@ export const Route = createFileRoute(
           const notifyUrl = `${origin}/api/v1/webhooks/${body.provider.toLowerCase()}`;
 
           if (body.provider === "PAYFAST") {
-            const merchantId = process.env[`PAYFAST_MERCHANT_ID_${event.slug}`] ?? event.payfastMerchantId ?? "";
-            const merchantKey = process.env[`PAYFAST_MERCHANT_KEY_${event.slug}`] ?? "";
-            const passphrase = process.env[`PAYFAST_PASSPHRASE_${event.slug}`] ?? "";
+            const envSlug = event.slug.replace(/-/g, "_");
+            const merchantId = process.env[`PAYFAST_MERCHANT_ID_${envSlug}`] ?? process.env[`PAYFAST_MERCHANT_ID_${event.slug}`] ?? event.payfastMerchantId ?? "";
+            const merchantKey = process.env[`PAYFAST_MERCHANT_KEY_${envSlug}`] ?? process.env[`PAYFAST_MERCHANT_KEY_${event.slug}`] ?? "";
+            const passphrase = process.env[`PAYFAST_PASSPHRASE_${envSlug}`] ?? process.env[`PAYFAST_PASSPHRASE_${event.slug}`] ?? "";
             const sandboxUrl = process.env["PAYFAST_SANDBOX_URL"] ?? "https://sandbox.payfast.co.za/eng/process";
 
             const params_pf: Record<string, string> = {
@@ -78,7 +79,8 @@ export const Route = createFileRoute(
           }
 
           if (body.provider === "SAFEPAY") {
-            const publicKey = process.env[`SAFEPAY_PUBLIC_KEY_${event.slug}`] ?? event.safepayPublicKey ?? "";
+            const envSlug = event.slug.replace(/-/g, "_");
+            const publicKey = process.env[`SAFEPAY_PUBLIC_KEY_${envSlug}`] ?? process.env[`SAFEPAY_PUBLIC_KEY_${event.slug}`] ?? event.safepayPublicKey ?? "";
             const sandboxUrl = process.env["SAFEPAY_SANDBOX_URL"] ?? "https://sandbox.api.getsafepay.com/checkout/pay";
 
             try {

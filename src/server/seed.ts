@@ -176,7 +176,7 @@ async function seed() {
       booking: { paymentPendingMinutes: 30, paymentReviewGraceHours: 24 },
       floorPlanLabel: "VenueFlow Exhibition Hall Layout",
       paymentProviders: ["PAYFAST", "MANUAL"],
-      payfastMerchantId: process.env["PAYFAST_MERCHANT_ID_business-expo"] ?? "",
+      payfastMerchantId: process.env["PAYFAST_MERCHANT_ID_business_expo"] ?? "",
       isPublished: true,
     });
     console.log("[seed] Event 1 (Business Expo) created.");

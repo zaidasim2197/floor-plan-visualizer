@@ -24,8 +24,9 @@ export const Route = createFileRoute("/api/v1/webhooks/safepay")({
         const event = await Event.findOne({ slug: slugGuess }).lean()
           ?? await Event.findOne({}).lean();
 
+        const envSlug = event?.slug ? event.slug.replace(/-/g, "_") : "";
         const secretKey = event
-          ? (process.env[`SAFEPAY_SECRET_KEY_${event.slug}`] ?? "")
+          ? (process.env[`SAFEPAY_SECRET_KEY_${envSlug}`] ?? process.env[`SAFEPAY_SECRET_KEY_${event.slug}`] ?? "")
           : "";
 
         const result = verifySafepayWebhook(rawBody, signature, secretKey);
