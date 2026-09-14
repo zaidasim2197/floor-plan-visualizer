@@ -17,6 +17,7 @@ import { stalls } from "@/data/floor-plan";
 import { formatMoney } from "@/lib/booking-format";
 import type { Stall, StallStatus } from "@/lib/booking-types";
 import { stallStatusMap, useBookingState, metrics } from "@/lib/booking-store";
+import { activeEventId } from "@/lib/event-store";
 
 const title = "Interactive Floor Plan — Book Your Exhibition Space";
 const description =
@@ -34,17 +35,62 @@ export const Route = createFileRoute("/floor-plan")({
   component: FloorPlanPage,
 });
 
+// In-memory module cache for instantaneous navigation between pages
+let cachedFloorPlanStatusMap: Record<string, StallStatus> | null = null;
+
+function getInitialStatusMap(): Record<string, StallStatus> {
+  if (cachedFloorPlanStatusMap && Object.keys(cachedFloorPlanStatusMap).length > 0) {
+    return cachedFloorPlanStatusMap;
+  }
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("venueflow_cached_status_map");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === "object") {
+          cachedFloorPlanStatusMap = parsed;
+          return parsed;
+        }
+      }
+    } catch {
+      /* ignore storage error */
+    }
+  }
+  return {};
+}
+
 function FloorPlanPage() {
   const state = useBookingState();
   const navigate = useNavigate();
-  const [serverStatusMap, setServerStatusMap] = useState<Record<string, StallStatus>>({});
+  const [serverStatusMap, setServerStatusMap] = useState<Record<string, StallStatus>>(() => getInitialStatusMap());
+  const [myHoldStallIds, setMyHoldStallIds] = useState<Set<string>>(new Set());
+
+  // Detect user's own active hold tokens from localStorage
+  const refreshMyHolds = () => {
+    if (typeof window === "undefined") return;
+    const holds = new Set<string>();
+    stalls.forEach((s) => {
+      const hasToken = localStorage.getItem(`venueflow_hold_token_${s.id}`);
+      const hasRef = localStorage.getItem(`venueflow_hold_ref_${s.id}`);
+      if (hasToken || hasRef) {
+        holds.add(s.id);
+      }
+    });
+    setMyHoldStallIds(holds);
+  };
+
+  useEffect(() => {
+    refreshMyHolds();
+  }, []);
+
+  const isMyHold = (stallId: string) => myHoldStallIds.has(stallId);
 
   // Real-time server sync from MongoDB API
   useEffect(() => {
     let mounted = true;
     const fetchLiveStatus = async () => {
       try {
-        const slug = eventConfig.slug || "business-expo";
+        const slug = activeEventId() || eventConfig.slug || "business-expo";
         const res = await fetch(`/api/v1/events/${slug}/floor-plan`);
         if (!res.ok) return;
         const data = await res.json();
@@ -59,7 +105,16 @@ function FloorPlanPage() {
                   ? "CONFIRMED"
                   : "AVAILABLE";
           });
+          cachedFloorPlanStatusMap = map;
+          try {
+            if (typeof window !== "undefined") {
+              localStorage.setItem("venueflow_cached_status_map", JSON.stringify(map));
+            }
+          } catch {
+            /* ignore storage quota */
+          }
           setServerStatusMap(map);
+          refreshMyHolds();
         }
       } catch {
         /* fallback to local store */
@@ -115,7 +170,8 @@ function FloorPlanPage() {
 
   const handleSelectStall = (stall: Stall) => {
     const status = statusMap[stall.id] ?? "AVAILABLE";
-    if (status === "CONFIRMED") return; // Only block CONFIRMED stalls from selection
+    const canSelect = status === "AVAILABLE" || (isMyHold(stall.id) && (status === "PAYMENT_PENDING" || status === "PAYMENT_REVIEW"));
+    if (!canSelect) return; // Block strangers from selecting on-hold or confirmed stalls
     setSelected(stall);
     setMobileDrawerOpen(true);
   };
@@ -149,7 +205,12 @@ function FloorPlanPage() {
 
       <section className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0">
-          <FloorMap statusMap={statusMap} selectedId={selected?.id ?? null} onSelect={handleSelectStall} />
+          <FloorMap
+            statusMap={statusMap}
+            selectedId={selected?.id ?? null}
+            onSelect={handleSelectStall}
+            myHoldIds={myHoldStallIds}
+          />
           <FloorMapLegend className="mt-4" />
 
           <div className="mt-8">
@@ -191,12 +252,14 @@ function FloorPlanPage() {
                     const status = statusMap[s.id] ?? "AVAILABLE";
                     const isSelected = selected?.id === s.id;
                     const isAvailable = status === "AVAILABLE";
+                    const isMine = isMyHold(s.id);
+                    const isClickable = isAvailable || (isMine && (status === "PAYMENT_PENDING" || status === "PAYMENT_REVIEW"));
                     return (
                       <tr
                         key={s.id}
-                        onClick={() => isAvailable && handleSelectStall(s)}
+                        onClick={() => isClickable && handleSelectStall(s)}
                         className={`transition-colors ${
-                          isAvailable
+                          isClickable
                             ? isSelected
                               ? "bg-primary/5 font-medium cursor-pointer"
                               : "hover:bg-secondary/60 cursor-pointer"
@@ -222,20 +285,26 @@ function FloorPlanPage() {
                             >
                               Book Space
                             </Button>
-                          ) : status === "PAYMENT_PENDING" ? (
+                          ) : isMine && (status === "PAYMENT_PENDING" || status === "PAYMENT_REVIEW") ? (
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-7 sm:h-8 text-xs font-bold border-amber-500 text-amber-600 hover:bg-amber-50"
+                              className="h-7 sm:h-8 text-xs font-bold border-amber-500 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleStartBooking(s.id);
                               }}
                             >
-                              View / Resume
+                              Resume Hold
                             </Button>
+                          ) : status === "PAYMENT_PENDING" || status === "PAYMENT_REVIEW" ? (
+                            <span className="inline-flex items-center rounded-md bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                              On Hold
+                            </span>
                           ) : (
-                            <span className="text-xs text-muted-foreground italic">Booked</span>
+                            <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground italic">
+                              Booked
+                            </span>
                           )}
                         </td>
                       </tr>
@@ -284,16 +353,18 @@ function FloorPlanPage() {
                     >
                       Reserve Space {selected.stallNumber} <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
-                  ) : selectedStatus === "PAYMENT_PENDING" ? (
+                  ) : isMyHold(selected.id) && (selectedStatus === "PAYMENT_PENDING" || selectedStatus === "PAYMENT_REVIEW") ? (
                     <Button
-                      className="w-full h-11 font-bold text-sm bg-amber-600 hover:bg-amber-700 text-white"
+                      className="w-full h-11 font-bold text-sm bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
                       onClick={() => handleStartBooking(selected.id)}
                     >
-                      Resume / Complete Hold ({selected.stallNumber}) <ArrowRight className="ml-2 h-4 w-4" />
+                      Resume / Complete Hold (Space {selected.stallNumber}) <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   ) : (
                     <Button className="w-full h-11 font-bold text-sm" disabled>
-                      Currently Unavailable (Booked)
+                      {selectedStatus === "PAYMENT_PENDING" || selectedStatus === "PAYMENT_REVIEW"
+                        ? "Currently On Hold"
+                        : "Currently Unavailable (Booked)"}
                     </Button>
                   )}
 
@@ -361,19 +432,21 @@ function FloorPlanPage() {
                     >
                       Reserve Space {selected.stallNumber} <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
-                  ) : selectedStatus === "PAYMENT_PENDING" ? (
+                  ) : isMyHold(selected.id) && (selectedStatus === "PAYMENT_PENDING" || selectedStatus === "PAYMENT_REVIEW") ? (
                     <Button
-                      className="w-full h-11 font-bold text-sm bg-amber-600 hover:bg-amber-700 text-white"
+                      className="w-full h-11 font-bold text-sm bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
                       onClick={() => {
                         setMobileDrawerOpen(false);
                         handleStartBooking(selected.id);
                       }}
                     >
-                      Resume / Complete Hold ({selected.stallNumber}) <ArrowRight className="ml-2 h-4 w-4" />
+                      Resume / Complete Hold (Space {selected.stallNumber}) <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   ) : (
                     <Button className="w-full h-11 font-bold text-sm" disabled>
-                      Currently Unavailable (Booked)
+                      {selectedStatus === "PAYMENT_PENDING" || selectedStatus === "PAYMENT_REVIEW"
+                        ? "Currently On Hold"
+                        : "Currently Unavailable (Booked)"}
                     </Button>
                   )}
 

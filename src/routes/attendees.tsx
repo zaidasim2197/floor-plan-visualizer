@@ -4,8 +4,11 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { eventConfig } from "@/config/event";
 import { stalls } from "@/data/floor-plan";
 import { useBookingState } from "@/lib/booking-store";
+import { activeEventId } from "@/lib/event-store";
+import type { Booking, BookingStatus } from "@/lib/booking-types";
 import { StatusBadge } from "@/components/site/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Users, Building, ShieldCheck, ArrowRight, Search } from "lucide-react";
 
 const title = `Attendees & Exhibitors — ${eventConfig.name}`;
@@ -23,22 +26,192 @@ export const Route = createFileRoute("/attendees")({
   component: AttendeesPage,
 });
 
+interface DisplayAttendee {
+  spaceNumber: string;
+  zone?: string;
+  companyName: string;
+  productService?: string;
+  category?: string;
+  status: BookingStatus;
+}
+
+let cachedAttendeesList: Array<{
+  spaceNumber: string;
+  zone?: string;
+  companyName: string;
+  productService?: string;
+  category?: string;
+}> | null = null;
+
 function AttendeesPage() {
-  const state = useBookingState();
+  const localStore = useBookingState();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(() => !cachedAttendeesList);
+  const [serverAttendees, setServerAttendees] = useState<Array<{
+    spaceNumber: string;
+    zone?: string;
+    companyName: string;
+    productService?: string;
+    category?: string;
+  }> | null>(() => {
+    if (cachedAttendeesList) return cachedAttendeesList;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("venueflow_cached_attendees");
+        if (raw) return JSON.parse(raw);
+      } catch {
+        /* ignore */
+      }
+    }
+    return null;
+  });
+  const [adminServerBookings, setAdminServerBookings] = useState<any[]>([]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setIsAdmin(localStorage.getItem("venueflow_admin_auth") === "true");
-    }
+    const adminAuth = typeof window !== "undefined" && localStorage.getItem("venueflow_admin_auth") === "true";
+    setIsAdmin(adminAuth);
+
+    let mounted = true;
+    const slug = activeEventId() || eventConfig.slug || "business-expo";
+
+    const fetchPublicAttendees = fetch(`/api/v1/events/${slug}/attendees`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!mounted) return;
+        const list = Array.isArray(data?.attendees) ? data.attendees : [];
+        setServerAttendees(list);
+        cachedAttendeesList = list;
+        try {
+          if (typeof window !== "undefined") {
+            localStorage.setItem("venueflow_cached_attendees", JSON.stringify(list));
+          }
+        } catch {
+          /* ignore */
+        }
+      })
+      .catch(() => {
+        if (mounted && !serverAttendees) {
+          setServerAttendees([]);
+        }
+      });
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("venueflow_admin_token") : null;
+    const fetchAdminBookings = adminAuth
+      ? fetch(`/api/v1/admin/events/${slug}/bookings?pageSize=100`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (!mounted) return;
+            const bList = data?.bookings ?? data?.data?.bookings;
+            if (Array.isArray(bList)) {
+              setAdminServerBookings(bList);
+            }
+          })
+          .catch(() => {
+            /* ignore */
+          })
+      : Promise.resolve();
+
+    Promise.allSettled([fetchPublicAttendees, fetchAdminBookings]).finally(() => {
+      if (mounted) setLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const displayedBookings = useMemo(() => {
-    if (isAdmin) {
-      return state.bookings.filter((b) => b.status === "CONFIRMED" || b.status === "PAYMENT_REVIEW" || b.status === "PAYMENT_PENDING");
+  const displayedAttendees = useMemo(() => {
+    const map = new Map<string, DisplayAttendee>();
+    const ALLOWED_STATUSES = new Set(["CONFIRMED", "PAYMENT_REVIEW", "PAYMENT_PENDING"]);
+
+    // 1. Process server public confirmed attendees
+    if (serverAttendees && serverAttendees.length > 0) {
+      serverAttendees.forEach((att) => {
+        if (att.spaceNumber) {
+          const stall = stalls.find((s) => s.id === att.spaceNumber || s.stallNumber === att.spaceNumber);
+          map.set(att.spaceNumber, {
+            spaceNumber: att.spaceNumber,
+            zone: att.zone || stall?.zone,
+            companyName: att.companyName,
+            productService: att.productService,
+            category: att.category || stall?.category,
+            status: "CONFIRMED",
+          });
+        }
+      });
     }
-    return state.bookings.filter((b) => b.status === "CONFIRMED");
-  }, [state.bookings, isAdmin]);
+
+    // 2. If admin, process server admin bookings
+    if (isAdmin && adminServerBookings.length > 0) {
+      adminServerBookings.forEach((b: any) => {
+        const spaceNum = b.spaceNumber || b.spaceId || b.stallId;
+        const status = (b.status as BookingStatus) || "CONFIRMED";
+        if (spaceNum && ALLOWED_STATUSES.has(status)) {
+          const stall = stalls.find((s) => s.id === spaceNum || s.stallNumber === spaceNum);
+          map.set(spaceNum, {
+            spaceNumber: spaceNum,
+            zone: b.zone || stall?.zone,
+            companyName: b.companyName,
+            productService: b.productService,
+            category: b.category || stall?.category,
+            status,
+          });
+        }
+      });
+    }
+
+    // 3. Process local store bookings (both demo prototype & reactive sessions)
+    if (localStore?.bookings && localStore.bookings.length > 0) {
+      localStore.bookings.forEach((b: Booking) => {
+        const spaceNum = b.stallId;
+        if (!spaceNum) return;
+        if (!ALLOWED_STATUSES.has(b.status)) return;
+
+        // If not admin, only show confirmed bookings
+        if (!isAdmin && b.status !== "CONFIRMED") return;
+
+        const stall = stalls.find((s) => s.id === spaceNum || s.stallNumber === spaceNum);
+
+        // Overlay/merge
+        map.set(spaceNum, {
+          spaceNumber: spaceNum,
+          zone: stall?.zone,
+          companyName: b.companyName,
+          productService: b.productService || stall?.description,
+          category: stall?.category,
+          status: b.status,
+        });
+      });
+    }
+
+    let list = Array.from(map.values()).filter((item) => ALLOWED_STATUSES.has(item.status));
+
+    // In public mode, only show CONFIRMED
+    if (!isAdmin) {
+      list = list.filter((item) => item.status === "CONFIRMED");
+    }
+
+    // Sort naturally by spaceNumber (e.g. A01, A02, B01...)
+    list.sort((a, b) => a.spaceNumber.localeCompare(b.spaceNumber, undefined, { numeric: true }));
+
+    // Apply search filter if present
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (item) =>
+          item.spaceNumber.toLowerCase().includes(q) ||
+          item.companyName.toLowerCase().includes(q) ||
+          (item.productService && item.productService.toLowerCase().includes(q)) ||
+          (item.category && item.category.toLowerCase().includes(q)) ||
+          (item.status && item.status.toLowerCase().includes(q))
+      );
+    }
+
+    return list;
+  }, [serverAttendees, adminServerBookings, localStore?.bookings, isAdmin, searchQuery]);
 
   return (
     <SiteLayout>
@@ -89,11 +262,22 @@ function AttendeesPage() {
                 : "Official list of confirmed participating organizations."}
             </p>
           </div>
-          <Button asChild size="sm">
-            <Link to="/floor-plan">
-              Book Your Exhibitor Space <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
+          <div className="flex items-center gap-3">
+            <div className="relative w-full max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search exhibitors..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9 text-xs"
+              />
+            </div>
+            <Button asChild size="sm">
+              <Link to="/floor-plan">
+                Book Your Exhibitor Space <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-xs">
@@ -108,23 +292,36 @@ function AttendeesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {displayedBookings.length === 0 ? (
+              {loading && displayedAttendees.length === 0 ? (
                 <tr>
                   <td colSpan={isAdmin ? 5 : 4} className="px-4 py-8 text-center text-muted-foreground">
-                    No confirmed bookings yet. Be the first to reserve a space!
+                    Loading exhibitors directory...
+                  </td>
+                </tr>
+              ) : displayedAttendees.length === 0 ? (
+                <tr>
+                  <td colSpan={isAdmin ? 5 : 4} className="px-4 py-8 text-center text-muted-foreground">
+                    {searchQuery ? "No exhibitors found matching your search." : "No confirmed exhibitors yet. Be the first to reserve and confirm an exhibition space!"}
                   </td>
                 </tr>
               ) : (
-                displayedBookings.map((b) => {
-                  const stall = stalls.find((s) => s.id === b.stallId);
+                displayedAttendees.map((b, idx) => {
+                  const stall = stalls.find((s) => s.id === b.spaceNumber || s.stallNumber === b.spaceNumber);
                   return (
-                    <tr key={b.id} className="hover:bg-secondary/40">
-                      <td className="px-4 py-3 font-extrabold text-foreground">{b.stallId}</td>
+                    <tr key={`${b.spaceNumber}-${idx}`} className="hover:bg-secondary/40 transition-colors">
+                      <td className="px-4 py-3 font-extrabold text-foreground">
+                        Space {b.spaceNumber}
+                        {b.zone && <span className="ml-2 text-xs font-normal text-muted-foreground">({b.zone})</span>}
+                      </td>
                       <td className="px-4 py-3 font-semibold text-foreground">
                         {b.companyName}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground max-w-xs truncate">{b.productService}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{stall?.category ?? "Exhibition Space"}</td>
+                      <td className="px-4 py-3 text-muted-foreground max-w-xs truncate">
+                        {b.productService || "General Exhibitor"}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {b.category || stall?.category || "Exhibition Space"}
+                      </td>
                       {isAdmin && (
                         <td className="px-4 py-3">
                           <StatusBadge status={b.status} />

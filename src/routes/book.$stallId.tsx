@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { eventConfig, whatsappLink } from "@/config/event";
 import { getStall } from "@/data/floor-plan";
+import { activeEventId, activeEvent } from "@/lib/event-store";
 import { formatMoney } from "@/lib/booking-format";
 import {
   createBooking,
@@ -53,21 +54,115 @@ function BookStallPage() {
   const navigate = useNavigate();
   const state = useBookingState();
 
-  const stall = useMemo(() => getStall(stallId), [stallId]);
+  const stall = useMemo(
+    () => getStall(stallId) || activeEvent()?.spaces.find((s) => s.id === stallId || s.stallNumber === stallId),
+    [stallId]
+  );
   const activeBooking = useMemo(
     () => (stall ? activeBookingForStall(state.bookings, stall.id) : undefined),
     [state.bookings, stall],
   );
 
-  // Form State
-  const [customerName, setCustomerName] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [productService, setProductService] = useState("");
-  const [notes, setNotes] = useState("");
-  const [terms, setTerms] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PAYFAST");
+  // Form State with localStorage Persistence on Page Refresh
+  const [customerName, setCustomerName] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(`venueflow_draft_name_${stallId}`) || localStorage.getItem("venueflow_draft_customer_name") || "";
+    }
+    return "";
+  });
+  const [companyName, setCompanyName] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(`venueflow_draft_company_${stallId}`) || localStorage.getItem("venueflow_draft_company_name") || "";
+    }
+    return "";
+  });
+  const [email, setEmail] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(`venueflow_draft_email_${stallId}`) || localStorage.getItem("venueflow_draft_email") || "";
+    }
+    return "";
+  });
+  const [phone, setPhone] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(`venueflow_draft_phone_${stallId}`) || localStorage.getItem("venueflow_draft_phone") || "";
+    }
+    return "";
+  });
+  const [productService, setProductService] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(`venueflow_draft_product_${stallId}`) || localStorage.getItem("venueflow_draft_product_service") || "";
+    }
+    return "";
+  });
+  const [notes, setNotes] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(`venueflow_draft_notes_${stallId}`) || "";
+    }
+    return "";
+  });
+  const [terms, setTerms] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(`venueflow_draft_terms_${stallId}`) === "true";
+    }
+    return false;
+  });
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem(`venueflow_payment_method_${stallId}`) as PaymentMethod) || "PAYFAST";
+    }
+    return "PAYFAST";
+  });
+
+  // Save form draft inputs across page refreshes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (customerName) {
+      localStorage.setItem(`venueflow_draft_name_${stallId}`, customerName);
+      localStorage.setItem("venueflow_draft_customer_name", customerName);
+    }
+  }, [customerName, stallId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (companyName) {
+      localStorage.setItem(`venueflow_draft_company_${stallId}`, companyName);
+      localStorage.setItem("venueflow_draft_company_name", companyName);
+    }
+  }, [companyName, stallId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (email) {
+      localStorage.setItem(`venueflow_draft_email_${stallId}`, email);
+      localStorage.setItem("venueflow_draft_email", email);
+    }
+  }, [email, stallId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (phone) {
+      localStorage.setItem(`venueflow_draft_phone_${stallId}`, phone);
+      localStorage.setItem("venueflow_draft_phone", phone);
+    }
+  }, [phone, stallId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (productService) {
+      localStorage.setItem(`venueflow_draft_product_${stallId}`, productService);
+      localStorage.setItem("venueflow_draft_product_service", productService);
+    }
+  }, [productService, stallId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(`venueflow_draft_notes_${stallId}`, notes);
+  }, [notes, stallId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(`venueflow_draft_terms_${stallId}`, String(terms));
+  }, [terms, stallId]);
 
   // Active Online Checkout Tab ("PAYFAST" | "SAFEPAY" | "SIMULATED")
   const [onlineTab, setOnlineTab] = useState<OnlineTab>("PAYFAST");
@@ -150,10 +245,34 @@ function BookStallPage() {
     expiresAt: number;
   } | null>(null);
 
-  // Hydrate booking on mount from MongoDB: check both cached reference and live space active booking
+  // Space held or confirmed by another user
+  const [heldByOther, setHeldByOther] = useState<{
+    status: "ON_HOLD" | "CONFIRMED";
+    expiresAt: number | null;
+  } | null>(null);
+
+  const [otherHoldSecondsLeft, setOtherHoldSecondsLeft] = useState<number>(0);
+
+  // Countdown timer for space held by another user
+  useEffect(() => {
+    if (!heldByOther?.expiresAt || heldByOther.status !== "ON_HOLD") return;
+    const calc = () => {
+      const remaining = Math.max(0, Math.floor((heldByOther.expiresAt! - Date.now()) / 1000));
+      setOtherHoldSecondsLeft(remaining);
+      if (remaining === 0) {
+        setHeldByOther(null);
+      }
+    };
+    calc();
+    const interval = setInterval(calc, 1000);
+    return () => clearInterval(interval);
+  }, [heldByOther]);
+
+  // Hydrate booking on mount from MongoDB and continuously poll for status updates (e.g. admin approval)
   useEffect(() => {
     if (!stall) return;
-    const activeEvtSlug = eventConfig.slug || "business-expo";
+    let mounted = true;
+    const activeEvtSlug = activeEventId() || eventConfig.slug || "business-expo";
     const cachedRef = activeRef || (typeof window !== "undefined" ? localStorage.getItem(`venueflow_hold_ref_${stall.id}`) : null);
     const cachedToken = holdToken || (typeof window !== "undefined" ? localStorage.getItem(`venueflow_hold_token_${stall.id}`) : null);
     const cachedMethod = typeof window !== "undefined" ? (localStorage.getItem(`venueflow_payment_method_${stall.id}`) as PaymentMethod | null) : null;
@@ -161,88 +280,124 @@ function BookStallPage() {
       setPaymentMethod(cachedMethod);
     }
 
-    // 1. Fetch space live status and active booking directly from MongoDB
-    fetch(`/api/v1/events/${activeEvtSlug}/spaces/${stall.id}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((spaceData) => {
-        if (spaceData?.activeBooking) {
+    const fetchSpaceStatus = async () => {
+      try {
+        const refToUse = activeRef || (typeof window !== "undefined" ? localStorage.getItem(`venueflow_hold_ref_${stall.id}`) : null);
+        const tokenToUse = holdToken || (typeof window !== "undefined" ? localStorage.getItem(`venueflow_hold_token_${stall.id}`) : null);
+
+        const headers: Record<string, string> = {};
+        if (tokenToUse) headers["x-hold-token"] = tokenToUse;
+        if (refToUse) headers["x-booking-reference"] = refToUse;
+
+        const res = await fetch(
+          `/api/v1/events/${activeEvtSlug}/spaces/${stall.id}${
+            tokenToUse
+              ? `?holdToken=${encodeURIComponent(tokenToUse)}`
+              : refToUse
+                ? `?reference=${encodeURIComponent(refToUse)}`
+                : ""
+          }`,
+          { headers },
+        );
+        if (!res.ok || !mounted) return;
+        const spaceData = await res.json();
+        if (!spaceData || !mounted) return;
+
+        if (spaceData.activeBooking) {
           const ab = spaceData.activeBooking;
           const expiresTime = ab.expiresAt ? new Date(ab.expiresAt).getTime() : Date.now() + 30 * 60 * 1000;
-          const isOwnHold =
-            (cachedToken && ab.holdToken === cachedToken) ||
-            (cachedRef && ab.reference === cachedRef) ||
-            (email && ab.email?.toLowerCase() === email.toLowerCase()) ||
-            !cachedRef; // If user navigates directly to a stall on hold, hydrate details
+          const isExpired = expiresTime <= Date.now() && ab.status !== "CONFIRMED";
 
-          if (expiresTime > Date.now() || ab.status === "CONFIRMED") {
-            setServerBooking({
-              reference: ab.reference,
-              stallId: spaceData.spaceNumber || stall.stallNumber || stall.id,
-              customerName: ab.customerName || "",
-              companyName: ab.companyName || "",
-              email: ab.email || "",
-              amount: Number(ab.amount || stall.price),
-              status: ab.status,
-              paymentStatus: ab.paymentStatus || "UNPAID",
-              expiresAt: expiresTime,
-            });
-            setActiveRef(ab.reference);
-            if (ab.holdToken) {
-              setHoldToken(ab.holdToken);
-              localStorage.setItem(`venueflow_hold_token_${stall.id}`, ab.holdToken);
+          if (!isExpired) {
+            const isOwnHold = Boolean(
+              spaceData.isOwnHold ||
+              (tokenToUse && ab.holdToken && ab.holdToken === tokenToUse) ||
+              (refToUse && ab.reference && ab.reference === refToUse),
+            );
+
+            if (isOwnHold && ab.reference) {
+              setHeldByOther(null);
+              setServerBooking((prev) => {
+                if (prev && prev.status !== ab.status && ab.status === "CONFIRMED") {
+                  toast.success("Payment Verified & Space Confirmed!");
+                }
+                return {
+                  reference: ab.reference,
+                  stallId: spaceData.spaceNumber || stall.stallNumber || stall.id,
+                  customerName: ab.customerName || prev?.customerName || "",
+                  companyName: ab.companyName || prev?.companyName || "",
+                  email: ab.email || prev?.email || "",
+                  amount: Number(ab.amount || stall.price),
+                  status: ab.status,
+                  paymentStatus: ab.paymentStatus || "UNPAID",
+                  expiresAt: expiresTime,
+                  paymentProofImage: prev?.paymentProofImage,
+                };
+              });
+
+              if (!activeRef && ab.reference) setActiveRef(ab.reference);
+              if (ab.holdToken && !holdToken) {
+                setHoldToken(ab.holdToken);
+                localStorage.setItem(`venueflow_hold_token_${stall.id}`, ab.holdToken);
+              }
+              localStorage.setItem(`venueflow_hold_ref_${stall.id}`, ab.reference);
+              if (ab.customerName) setCustomerName(ab.customerName);
+              if (ab.companyName) setCompanyName(ab.companyName);
+              if (ab.email) setEmail(ab.email);
+              if (ab.phone) setPhone(ab.phone);
+              if (ab.productService) setProductService(ab.productService);
+              return;
+            } else {
+              setServerBooking(null);
+              toast.error(
+                `Space ${stall.stallNumber} is currently ${
+                  spaceData.displayStatus === "CONFIRMED" || ab.status === "CONFIRMED"
+                    ? "already booked"
+                    : "on hold by another buyer"
+                }. Please select an available space.`,
+              );
+              navigate({ to: "/floor-plan" });
+              return;
             }
-            localStorage.setItem(`venueflow_hold_ref_${stall.id}`, ab.reference);
-            if (ab.customerName) setCustomerName(ab.customerName);
-            if (ab.companyName) setCompanyName(ab.companyName);
-            if (ab.email) setEmail(ab.email);
-            return;
           }
         }
 
-        // 2. Fallback: if cachedRef exists, fetch booking by reference
-        if (cachedRef) {
-          fetch(`/api/v1/events/${activeEvtSlug}/bookings/${cachedRef}`)
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => {
-              if (data && data.reference && data.status) {
-                const expiresTime = data.expiresAt ? new Date(data.expiresAt).getTime() : Date.now() + 30 * 60 * 1000;
-                if (expiresTime > Date.now() || data.status === "CONFIRMED") {
-                  setServerBooking({
-                    reference: data.reference,
-                    stallId: data.spaceNumber || stall.stallNumber || stall.id,
-                    customerName: data.customerName || "",
-                    companyName: data.companyName || "",
-                    email: data.email || "",
-                    amount: Number(data.amount || stall.price),
-                    status: data.status,
-                    paymentStatus: data.paymentStatus || "UNPAID",
-                    expiresAt: expiresTime,
-                  });
-                  setActiveRef(data.reference);
-                  if (data.customerName) setCustomerName(data.customerName);
-                  if (data.companyName) setCompanyName(data.companyName);
-                  if (data.email) setEmail(data.email);
-                } else {
-                  localStorage.removeItem(`venueflow_hold_ref_${stall.id}`);
-                  localStorage.removeItem(`venueflow_hold_token_${stall.id}`);
-                }
-              }
-            })
-            .catch(() => null);
+        // Space is available (or previous hold expired)
+        setHeldByOther(null);
+        setServerBooking(null);
+        if (refToUse || tokenToUse) {
+          localStorage.removeItem(`venueflow_hold_ref_${stall.id}`);
+          localStorage.removeItem(`venueflow_hold_token_${stall.id}`);
         }
-      })
-      .catch(() => null);
-  }, [stall, activeRef]);
+      } catch {
+        /* ignore fetch error */
+      }
+    };
+
+    fetchSpaceStatus();
+
+    // Auto-poll every 1.5 seconds for instant real-time admin status sync
+    const interval = setInterval(fetchSpaceStatus, 1500);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [stall, activeRef, holdToken]);
 
   // Active booking calculation (Server booking takes precedence, then activeRef, then client store)
   const currentBooking = useMemo(() => {
+    if (heldByOther) return null;
+    const local = activeRef ? state.bookings.find((b) => b.reference === activeRef) : null;
+    if (local?.status === "CONFIRMED") return local;
+    if (serverBooking?.status === "CONFIRMED") return serverBooking;
     if (serverBooking) return serverBooking;
-    if (activeRef) {
-      const local = state.bookings.find((b) => b.reference === activeRef);
-      if (local) return local;
+    if (local) return local;
+    if (activeRef && activeBooking && activeBooking.reference === activeRef) {
+      return activeBooking;
     }
-    return activeBooking;
-  }, [serverBooking, state.bookings, activeRef, activeBooking]);
+    return null;
+  }, [heldByOther, serverBooking, state.bookings, activeRef, activeBooking]);
 
   // Live Hold Timer (30 minutes)
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
@@ -326,7 +481,7 @@ function BookStallPage() {
 
     setSubmitting(true);
     try {
-      const activeEvtSlug = eventConfig.slug || "business-expo";
+      const activeEvtSlug = activeEventId() || eventConfig.slug || "business-expo";
       const apiRes = await fetch(`/api/v1/events/${activeEvtSlug}/bookings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -524,7 +679,7 @@ function BookStallPage() {
 
     try {
       // Send simulated payment webhook to backend
-      const activeEvtSlug = eventConfig.slug || "business-expo";
+      const activeEvtSlug = activeEventId() || eventConfig.slug || "business-expo";
       // Generate signature on raw payload
       const payload = {
         event: "PAYMENT_COMPLETE",
@@ -545,6 +700,30 @@ function BookStallPage() {
 
       // Sync local client store
       confirmOnlineCardPayment(currentBooking.reference, cardTxnRef);
+
+      // Immediately mark as CONFIRMED in local serverBooking state for instant confirmed pass rendering
+      setServerBooking((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "CONFIRMED",
+              paymentStatus: "VERIFIED",
+              paymentReference: cardTxnRef,
+            }
+          : {
+              reference: currentBooking.reference,
+              stallId: stall.stallNumber || stall.id,
+              customerName: currentBooking.customerName,
+              companyName: currentBooking.companyName,
+              email: currentBooking.email,
+              amount: currentBooking.amount,
+              status: "CONFIRMED",
+              paymentStatus: "VERIFIED",
+              paymentReference: cardTxnRef,
+              expiresAt: currentBooking.expiresAt,
+            },
+      );
+
       toast.success("Payment Successful! Your stall booking is confirmed.");
     } catch {
       toast.success("Payment processed.");
@@ -570,13 +749,22 @@ function BookStallPage() {
       paymentRefInput.trim() || `TRX-PROOF-${Math.floor(100000 + Math.random() * 900000)}`;
 
     try {
-      const activeEvtSlug = eventConfig.slug || "business-expo";
+      if (proofImageBase64 && typeof window !== "undefined") {
+        try {
+          localStorage.setItem(`venueflow_proof_img_${currentBooking.reference}`, proofImageBase64);
+        } catch {
+          /* ignore storage error */
+        }
+      }
+
+      const activeEvtSlug = activeEventId() || eventConfig.slug || "business-expo";
       await fetch(`/api/v1/events/${activeEvtSlug}/bookings/${currentBooking.reference}/payment/evidence`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           paymentReference: dummyRef,
-          proofStorageKey: proofFileName || "receipt-image.png",
+          proofStorageKey: proofImageBase64 || proofFileName || "receipt-image.png",
+          paymentProofImage: proofImageBase64 || undefined,
         }),
       }).catch(() => null);
 
@@ -585,6 +773,18 @@ function BookStallPage() {
         dummyRef,
         proofImageBase64 || undefined,
       );
+
+      setServerBooking((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "PAYMENT_REVIEW",
+              paymentStatus: "PENDING_VERIFICATION",
+              paymentProofImage: proofImageBase64 || undefined,
+            }
+          : null,
+      );
+
       toast.success("Payment Proof Submitted! Admin has been notified for verification.");
     } catch {
       toast.success("Payment proof submitted.");
@@ -612,16 +812,21 @@ function BookStallPage() {
           </Link>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="eyebrow text-primary">{stall.zone}</p>
-              <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl text-foreground">
-                Exhibition Space Booking — Space {stall.stallNumber}
-              </h1>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-muted-foreground">Price:</span>
-              <span className="text-xl font-extrabold text-foreground">
-                {formatMoney(stall.price)}
+              <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                Space Reservation
               </span>
+              <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+                Space {stall.stallNumber} Checkout
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {stall.category} • {stall.dimensions} • Zone {stall.zone}
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="text-xs text-muted-foreground">Total Fee</span>
+              <div className="text-3xl font-extrabold text-primary">
+                {formatMoney(stall.price)}
+              </div>
             </div>
           </div>
         </div>
@@ -629,7 +834,75 @@ function BookStallPage() {
 
       {/* MAIN WORKFLOW */}
       <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
-        {currentBooking ? (
+        {heldByOther ? (
+          <div className="mx-auto max-w-2xl space-y-6">
+            <div
+              className={`rounded-2xl border p-8 sm:p-10 text-center space-y-6 shadow-sm ${
+                heldByOther.status === "CONFIRMED"
+                  ? "border-emerald-500/30 bg-emerald-500/5"
+                  : "border-amber-500/30 bg-amber-500/5"
+              }`}
+            >
+              {heldByOther.status === "CONFIRMED" ? (
+                <ShieldCheck className="mx-auto h-16 w-16 text-emerald-600 animate-pulse" />
+              ) : (
+                <Clock className="mx-auto h-16 w-16 text-amber-600 animate-pulse" />
+              )}
+
+              <div className="space-y-2">
+                <span
+                  className={`inline-block rounded-full px-3.5 py-1 text-xs font-extrabold uppercase tracking-wider ${
+                    heldByOther.status === "CONFIRMED"
+                      ? "bg-emerald-600/10 text-emerald-700 dark:text-emerald-300"
+                      : "bg-amber-500/10 text-amber-800 dark:text-amber-300"
+                  }`}
+                >
+                  {heldByOther.status === "CONFIRMED"
+                    ? "Space Confirmed & Booked"
+                    : "Temporary Hold Active"}
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+                  {heldByOther.status === "CONFIRMED"
+                    ? `Space ${stall.stallNumber} Is Already Booked`
+                    : `Space ${stall.stallNumber} Is Currently On Hold`}
+                </h2>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+                  {heldByOther.status === "CONFIRMED"
+                    ? `This exhibition stall has been confirmed and reserved by an exhibitor. Please select another space from the floor plan.`
+                    : `Another exhibitor is currently in checkout for this space. If their reservation expires or is released, this space will become available immediately.`}
+                </p>
+              </div>
+
+              {heldByOther.status === "ON_HOLD" && otherHoldSecondsLeft > 0 && (
+                <div className="max-w-xs mx-auto rounded-xl bg-card border border-border p-4 shadow-xs">
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    Hold Window Countdown
+                  </span>
+                  <p className="text-2xl sm:text-3xl font-extrabold font-mono text-amber-600 dark:text-amber-400 mt-1">
+                    {formatTimer(otherHoldSecondsLeft)}
+                  </p>
+                </div>
+              )}
+
+              <div className="pt-2 flex flex-wrap justify-center gap-3">
+                <Button asChild className="font-bold h-11 px-6">
+                  <Link to="/floor-plan">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Browse Floor Plan
+                  </Link>
+                </Button>
+                {heldByOther.status === "ON_HOLD" && (
+                  <Button
+                    variant="outline"
+                    onClick={() => window.location.reload()}
+                    className="font-bold h-11 px-6 border-border"
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" /> Refresh Availability
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : currentBooking ? (
           <div className="mx-auto max-w-3xl space-y-8">
             {/* STEP SUMMARY & HOLD BADGE */}
             <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
@@ -1162,9 +1435,6 @@ function BookStallPage() {
                 <div className="pt-4 flex flex-wrap justify-center gap-3">
                   <Button asChild variant="outline">
                     <Link to="/floor-plan">Return to Floor Plan</Link>
-                  </Button>
-                  <Button asChild>
-                    <Link to="/admin">Open Admin Panel to Verify & Approve</Link>
                   </Button>
                 </div>
               </div>

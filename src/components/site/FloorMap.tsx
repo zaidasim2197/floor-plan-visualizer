@@ -75,9 +75,17 @@ interface FloorMapProps {
   onSelect?: (stall: Stall) => void;
   className?: string;
   isAdminView?: boolean;
+  myHoldIds?: Set<string>;
 }
 
-export function FloorMap({ statusMap, selectedId, onSelect, className, isAdminView }: FloorMapProps) {
+export function FloorMap({
+  statusMap,
+  selectedId,
+  onSelect,
+  className,
+  isAdminView,
+  myHoldIds,
+}: FloorMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -222,19 +230,22 @@ export function FloorMap({ statusMap, selectedId, onSelect, className, isAdminVi
             {stalls.map((s) => {
               const status = statusMap[s.id] ?? "AVAILABLE";
               const selected = selectedId === s.id;
-              const isConfirmed = status === "CONFIRMED";
-              const clickable = !isConfirmed || isAdminView;
+              const isAvailable = status === "AVAILABLE";
+              const isMyHold = Boolean(myHoldIds?.has(s.id));
+              const clickable = isAvailable || (isMyHold && (status === "PAYMENT_PENDING" || status === "PAYMENT_REVIEW")) || isAdminView;
               return (
                 <g
                   key={s.id}
                   role="button"
-                  tabIndex={0}
+                  tabIndex={clickable ? 0 : -1}
                   aria-label={`Space ${s.stallNumber}, ${statusLabel[status]}, ${formatMoney(s.price)}`}
                   className="outline-none"
                   style={{ cursor: clickable ? "pointer" : "not-allowed" }}
-                  onClick={() => onSelect?.(s)}
+                  onClick={() => {
+                    if (clickable) onSelect?.(s);
+                  }}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
+                    if (clickable && (e.key === "Enter" || e.key === " ")) {
                       e.preventDefault();
                       onSelect?.(s);
                     }

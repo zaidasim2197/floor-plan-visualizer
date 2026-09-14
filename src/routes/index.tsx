@@ -19,9 +19,11 @@ import { Button } from "@/components/ui/button";
 import { eventConfig, whatsappLink } from "@/config/event";
 import { stalls } from "@/data/floor-plan";
 import { metrics, stallStatusMap, useBookingState } from "@/lib/booking-store";
+import { activeEventId } from "@/lib/event-store";
+import { formatMoney } from "@/lib/booking-format";
 
-const title = `${eventConfig.name} — Exhibition Space Booking`;
-const description = `${eventConfig.tagline} Reserve your stall for ${eventConfig.dateLabel} at ${eventConfig.venue.name}, ${eventConfig.venue.city}.`;
+const title = `${eventConfig.name} — Interactive Exhibition Floor Plan & Stall Booking`;
+const description = `${eventConfig.tagline} Live interactive floor map, instant stall reservations, and verified exhibitor directory.`;
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -35,15 +37,38 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+let cachedHomeStatusMap: Record<string, import("@/lib/booking-types").StallStatus> | null = null;
+
+function getInitialStatusMap(): Record<string, import("@/lib/booking-types").StallStatus> {
+  if (cachedHomeStatusMap && Object.keys(cachedHomeStatusMap).length > 0) {
+    return cachedHomeStatusMap;
+  }
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("venueflow_cached_status_map");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === "object") {
+          cachedHomeStatusMap = parsed;
+          return parsed;
+        }
+      }
+    } catch {
+      /* ignore storage error */
+    }
+  }
+  return {};
+}
+
 function Index() {
   const state = useBookingState();
-  const [serverStatusMap, setServerStatusMap] = useState<Record<string, import("@/lib/booking-types").StallStatus>>({});
+  const [serverStatusMap, setServerStatusMap] = useState<Record<string, import("@/lib/booking-types").StallStatus>>(() => getInitialStatusMap());
 
   useEffect(() => {
     let mounted = true;
     const fetchLiveStatus = async () => {
       try {
-        const slug = eventConfig.slug || "business-expo";
+        const slug = activeEventId() || eventConfig.slug || "business-expo";
         const res = await fetch(`/api/v1/events/${slug}/floor-plan`);
         if (!res.ok) return;
         const data = await res.json();
@@ -58,6 +83,13 @@ function Index() {
                   ? "CONFIRMED"
                   : "AVAILABLE";
           });
+          try {
+            if (typeof window !== "undefined") {
+              localStorage.setItem("venueflow_cached_status_map", JSON.stringify(map));
+            }
+          } catch {
+            /* ignore */
+          }
           setServerStatusMap(map);
         }
       } catch {

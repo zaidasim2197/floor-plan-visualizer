@@ -44,6 +44,7 @@ export function sampleEvents(): ManagedEvent[] {
       spaces: secondSpaces,
       config: {
         ...structuredClone(defaultEventConfig),
+        slug: "makers-market",
         name: "Lahore Makers Market 2027",
         edition: "Spring 2027",
         tagline: "Independent design. Local craft. A shared creative space.",
@@ -61,9 +62,9 @@ export function sampleEvents(): ManagedEvent[] {
         contact: {
           email: "hello@makers.example",
           phone: "+92 42 5550 1200",
-          whatsapp: ["+92 300 5551200"],
+          whatsapp: ["+92 111 1111111", "+92 111 1111111"],
         },
-        booking: { paymentPendingMinutes: 45, paymentReviewGraceHours: 24 },
+        booking: { paymentPendingMinutes: 30, paymentReviewGraceHours: 24 },
         floorPlanLabel: "Makers Market Layout",
       },
     },
@@ -81,7 +82,7 @@ export function activeEvent() {
 function apply() {
   const event = activeEvent();
   if (event) {
-    applyEventConfig(event.config);
+    applyEventConfig({ ...event.config, slug: event.id });
     applyStalls(event.spaces);
   }
 }
@@ -93,8 +94,18 @@ export function initializeEvents() {
       raw?.events?.length &&
       raw.events.some((e) => e.id === raw.activeId) &&
       raw.events.every((e) => e.config?.name && Array.isArray(e.spaces))
-    )
+    ) {
       catalog = raw;
+      catalog.events.forEach((ev) => {
+        ev.config.slug = ev.id;
+        if (ev.config?.booking) {
+          ev.config.booking.paymentPendingMinutes = 30;
+        }
+        if (ev.sample || ev.id === DEFAULT_EVENT_ID || ev.id === "makers-market") {
+          ev.config.contact.whatsapp = ["+92 111 1111111", "+92 111 1111111"];
+        }
+      });
+    }
   } catch {
     /* Recover to the sample catalog if storage is unavailable. */
   }

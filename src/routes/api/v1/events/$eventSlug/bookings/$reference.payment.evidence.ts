@@ -8,9 +8,10 @@ import { z } from "zod";
 
 const EvidenceSchema = z.object({
   paymentReference: z.string().trim().max(100).optional(),
-  proofStorageKey: z.string().trim().max(500).optional(),
-}).refine((v) => v.paymentReference || v.proofStorageKey, {
-  message: "Provide either a payment reference or a proof storage key.",
+  proofStorageKey: z.string().trim().max(5000000).optional(),
+  paymentProofImage: z.string().trim().max(5000000).optional(),
+}).refine((v) => v.paymentReference || v.proofStorageKey || v.paymentProofImage, {
+  message: "Provide either a payment reference or a proof storage key / receipt image.",
 });
 
 export const Route = createFileRoute(
@@ -48,7 +49,9 @@ export const Route = createFileRoute(
             booking.paymentStatus = "EVIDENCE_SUBMITTED";
             booking.paymentSubmittedAt = new Date();
             if (body.paymentReference) booking.paymentReference = body.paymentReference;
-            if (body.proofStorageKey) booking.proofStorageKey = body.proofStorageKey;
+            if (body.paymentProofImage || body.proofStorageKey) {
+              booking.proofStorageKey = body.paymentProofImage || body.proofStorageKey;
+            }
             await booking.save();
 
             void audit("PAYMENT_SUBMITTED", "customer",
@@ -77,7 +80,9 @@ export const Route = createFileRoute(
             booking.paymentSubmittedAt = new Date();
             booking.conflictReason = "Payment evidence received after the hold expired.";
             if (body.paymentReference) booking.paymentReference = body.paymentReference;
-            if (body.proofStorageKey) booking.proofStorageKey = body.proofStorageKey;
+            if (body.paymentProofImage || body.proofStorageKey) {
+              booking.proofStorageKey = body.paymentProofImage || body.proofStorageKey;
+            }
             await booking.save();
 
             void audit("CONFLICT_CREATED", "system",

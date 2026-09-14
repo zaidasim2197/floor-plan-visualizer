@@ -20,7 +20,11 @@ export async function connectDB(): Promise<typeof mongoose> {
   connectionPromise = mongoose
     .connect(uri, {
       dbName: process.env["MONGODB_DB"] ?? "venueflow",
-      serverSelectionTimeoutMS: 5000, // fail fast in dev if no DB is running
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      maxIdleTimeMS: 30000,
+      socketTimeoutMS: 20000,
+      serverSelectionTimeoutMS: 5000,
       connectTimeoutMS: 5000,
     })
     .then((m) => {

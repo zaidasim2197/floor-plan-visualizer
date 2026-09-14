@@ -14,13 +14,19 @@ export const Route = createFileRoute("/api/v1/events/$eventSlug/availability")({
           const event = await Event.findOne({ slug: params.eventSlug, isPublished: true }).lean();
           if (!event) return apiError(404, "EVENT_NOT_FOUND", "Event not found.");
 
-          await sweepExpiredBookings(String(event._id));
-
           const [total, activeBookings] = await Promise.all([
             Space.countDocuments({ eventId: event._id, isActive: true }),
-            Booking.find({ eventId: event._id, status: { $in: ACTIVE_BOOKING_STATUSES } })
+            Booking.find({
+              eventId: event._id,
+              status: { $in: ACTIVE_BOOKING_STATUSES },
+              $or: [
+                { status: { $in: ["PAYMENT_REVIEW", "CONFIRMED"] } },
+                { expiresAt: { $gt: new Date() } },
+              ],
+            })
               .select("status")
               .lean(),
+            sweepExpiredBookings(String(event._id)).catch(() => 0),
           ]);
 
           const confirmed = activeBookings.filter((b) => b.status === "CONFIRMED").length;

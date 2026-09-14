@@ -4,6 +4,7 @@
  */
 
 export const defaultEventConfig = {
+  slug: "business-expo",
   name: "VenueFlow Business Expo 2027",
   tagline: "The premier exhibition booking platform for industry leaders and enterprise buyers.",
   description:
@@ -22,7 +23,7 @@ export const defaultEventConfig = {
   contact: {
     email: "events@venueflow-demo.com",
     phone: "+92 21 0000 0000",
-    whatsapp: ["+92 300 1234567", "+92 321 7654321"],
+    whatsapp: ["+92 111 1111111", "+92 111 1111111"],
   },
   booking: {
     /** Temporary hold on an unpaid booking. */

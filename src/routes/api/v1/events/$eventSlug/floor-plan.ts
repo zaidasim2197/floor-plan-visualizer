@@ -15,18 +15,21 @@ export const Route = createFileRoute("/api/v1/events/$eventSlug/floor-plan")({
           const event = await Event.findOne({ slug: params.eventSlug, isPublished: true }).lean();
           if (!event) return apiError(404, "EVENT_NOT_FOUND", "Event not found.");
 
-          // Lazy expiry sweep before serving availability data
-          await sweepExpiredBookings(String(event._id));
-
           const [floorPlan, spaces, activeBookings] = await Promise.all([
             FloorPlan.findOne({ eventId: event._id }).lean(),
             Space.find({ eventId: event._id, isActive: true }).lean(),
             Booking.find({
               eventId: event._id,
               status: { $in: ACTIVE_BOOKING_STATUSES },
+              $or: [
+                { status: { $in: ["PAYMENT_REVIEW", "CONFIRMED"] } },
+                { expiresAt: { $gt: new Date() } },
+              ],
             })
               .select("spaceId status")
               .lean(),
+            // Sweep expired holds asynchronously in background without delaying response
+            sweepExpiredBookings(String(event._id)).catch(() => 0),
           ]);
 
           if (!floorPlan) return apiError(404, "FLOOR_PLAN_NOT_FOUND", "Floor plan not configured.");

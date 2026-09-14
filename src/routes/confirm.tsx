@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { eventConfig } from "@/config/event";
 import { formatMoney } from "@/lib/booking-format";
 import { confirmOnlineCardPayment, useBookingState } from "@/lib/booking-store";
+import { activeEventId } from "@/lib/event-store";
 import { CheckCircle2, ShieldCheck, Printer, ArrowLeft, AlertCircle, Sparkles, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -60,10 +61,20 @@ function ConfirmPage() {
       const cardTxnRef = `SIMULATED-${gw.toUpperCase()}-${Math.floor(100000 + Math.random() * 900000)}`;
       confirmOnlineCardPayment(bookingRef, cardTxnRef);
       setStatus("success");
-      toast.success(`Simulated payment verified! Booking reference ${bookingRef} confirmed.`);
+      toast.success(`Payment verified! Booking reference ${bookingRef} confirmed.`);
+
+      // Fire simulated webhook to confirm in MongoDB immediately without requiring admin approval
+      fetch("/api/v1/webhooks/simulated", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "PAYMENT_COMPLETE",
+          providerRef: bookingRef,
+        }),
+      }).catch(() => null);
 
       // Fetch official booking details from MongoDB
-      const slug = eventConfig.slug || "business-expo";
+      const slug = activeEventId() || eventConfig.slug || "business-expo";
       fetch(`/api/v1/events/${slug}/bookings/${bookingRef}`)
         .then((res) => res.json())
         .then((data) => {
@@ -111,18 +122,6 @@ function ConfirmPage() {
   return (
     <SiteLayout>
       <section className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 space-y-6">
-        {/* BIG EXPLICIT SIMULATION NOTICE HEADING */}
-        {isSimulated && (
-          <div className="rounded-2xl border-2 border-amber-500/50 bg-amber-500/10 p-6 text-center space-y-2 shadow-sm">
-            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-amber-950 dark:text-amber-200 uppercase">
-              SIMULATED {gatewayName.toUpperCase()} PAYMENT SUCCESSFUL
-            </h1>
-            <p className="text-xs sm:text-sm text-amber-900/80 dark:text-amber-300/90 max-w-lg mx-auto font-medium">
-              This transaction was processed in a simulated sandbox environment. No actual bank charges occurred. Space reservation is successfully confirmed.
-            </p>
-          </div>
-        )}
-
         {/* CONFIRMATION CARD */}
         <div className="rounded-2xl border border-emerald-500/30 bg-card p-8 sm:p-10 text-center shadow-lg space-y-6">
           <ShieldCheck className="mx-auto h-20 w-20 text-emerald-600 animate-bounce" />
@@ -173,13 +172,15 @@ function ConfirmPage() {
           )}
 
           <div className="pt-4 flex flex-wrap justify-center gap-4">
-            <Button onClick={() => window.print()} variant="outline" className="font-bold">
-              <Printer className="mr-2 h-4 w-4" /> Print Confirmed Pass
+            <Button
+              onClick={() => window.print()}
+              variant="outline"
+              className="font-bold border-border"
+            >
+              <Printer className="mr-2 h-4 w-4" /> Print / Download Confirmed Pass
             </Button>
             <Button asChild className="font-bold bg-primary text-primary-foreground">
-              <Link to="/floor-plan">
-                <ArrowLeft className="mr-2 h-4 w-4" /> View Live Map
-              </Link>
+              <Link to="/floor-plan">View Confirmed Space on Live Map</Link>
             </Button>
           </div>
         </div>

@@ -251,11 +251,48 @@ function AdminPage() {
 
 // ------------------------------------------------------------- DASHBOARD VIEW
 
+let cachedAdminBookings: Booking[] | null = null;
+let cachedAdminNotifs: NotificationRecord[] | null = null;
+let cachedAdminAudit: AuditEvent[] | null = null;
+
 function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const localStoreState = useBookingState();
-  const [liveBookings, setLiveBookings] = useState<Booking[] | null>(null);
-  const [liveNotifications, setLiveNotifications] = useState<NotificationRecord[] | null>(null);
-  const [liveAudit, setLiveAudit] = useState<AuditEvent[] | null>(null);
+  const [liveBookings, setLiveBookings] = useState<Booking[] | null>(() => {
+    if (cachedAdminBookings && cachedAdminBookings.length > 0) return cachedAdminBookings;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("venueflow_cached_admin_bookings");
+        if (raw) return JSON.parse(raw);
+      } catch {
+        /* ignore */
+      }
+    }
+    return null;
+  });
+  const [liveNotifications, setLiveNotifications] = useState<NotificationRecord[] | null>(() => {
+    if (cachedAdminNotifs) return cachedAdminNotifs;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("venueflow_cached_admin_notifs");
+        if (raw) return JSON.parse(raw);
+      } catch {
+        /* ignore */
+      }
+    }
+    return null;
+  });
+  const [liveAudit, setLiveAudit] = useState<AuditEvent[] | null>(() => {
+    if (cachedAdminAudit) return cachedAdminAudit;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("venueflow_cached_admin_audit");
+        if (raw) return JSON.parse(raw);
+      } catch {
+        /* ignore */
+      }
+    }
+    return null;
+  });
   const [isLiveConnected, setIsLiveConnected] = useState(true);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
@@ -306,9 +343,25 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             status: b.status,
             paymentStatus: b.paymentStatus,
             paymentReference: b.paymentReference || "",
-            paymentProofImage: b.proofStorageKey
-              ? `/api/v1/admin/proof-placeholder?key=${encodeURIComponent(b.proofStorageKey)}`
-              : undefined,
+            paymentProofImage: (() => {
+              if (
+                b.proofStorageKey?.startsWith("data:image/") ||
+                b.proofStorageKey?.startsWith("http://") ||
+                b.proofStorageKey?.startsWith("https://") ||
+                b.proofStorageKey?.startsWith("blob:")
+              ) {
+                return b.proofStorageKey;
+              }
+              if (typeof window !== "undefined") {
+                const localImg = localStorage.getItem(`venueflow_proof_img_${b.reference}`);
+                if (localImg) return localImg;
+              }
+              const storeBooking = localStoreState?.bookings?.find((x) => x.reference === b.reference);
+              if (storeBooking?.paymentProofImage) return storeBooking.paymentProofImage;
+              return b.proofStorageKey
+                ? `/api/v1/admin/proof-placeholder?key=${encodeURIComponent(b.proofStorageKey)}`
+                : undefined;
+            })(),
             createdAt: new Date(b.createdAt).getTime(),
             expiresAt: b.expiresAt ? new Date(b.expiresAt).getTime() : Date.now() + 1800000,
             source: b.source || "PUBLIC",
@@ -316,6 +369,10 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             confirmedAt: b.confirmedAt ? new Date(b.confirmedAt).getTime() : undefined,
           }));
           setLiveBookings(mapped);
+          cachedAdminBookings = mapped;
+          try {
+            if (typeof window !== "undefined") localStorage.setItem("venueflow_cached_admin_bookings", JSON.stringify(mapped));
+          } catch { /* ignore */ }
           setIsLiveConnected(true);
           setLastSyncedAt(new Date());
         }
@@ -325,18 +382,21 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         const nData = await notifsRes.json();
         const rawNotifs = nData.notifications ?? nData.data?.notifications;
         if (Array.isArray(rawNotifs)) {
-          setLiveNotifications(
-            rawNotifs.map((n: any) => ({
-              id: n.id || n._id,
-              audience: n.audience,
-              recipient: n.recipient,
-              subject: n.subject,
-              body: n.body,
-              status: n.status,
-              bookingRef: n.bookingRef || undefined,
-              createdAt: new Date(n.createdAt).getTime(),
-            })),
-          );
+          const mappedNotifs = rawNotifs.map((n: any) => ({
+            id: n.id || n._id,
+            audience: n.audience,
+            recipient: n.recipient,
+            subject: n.subject,
+            body: n.body,
+            status: n.status,
+            bookingRef: n.bookingRef || undefined,
+            createdAt: new Date(n.createdAt).getTime(),
+          }));
+          setLiveNotifications(mappedNotifs);
+          cachedAdminNotifs = mappedNotifs;
+          try {
+            if (typeof window !== "undefined") localStorage.setItem("venueflow_cached_admin_notifs", JSON.stringify(mappedNotifs));
+          } catch { /* ignore */ }
         }
       }
 
@@ -344,16 +404,19 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         const aData = await auditRes.json();
         const rawEntries = aData.entries ?? aData.data?.entries;
         if (Array.isArray(rawEntries)) {
-          setLiveAudit(
-            rawEntries.map((a: any) => ({
-              id: a.id || a._id,
-              bookingRef: a.bookingRef || undefined,
-              action: a.action,
-              actor: a.actor,
-              details: a.details,
-              createdAt: new Date(a.createdAt).getTime(),
-            })),
-          );
+          const mappedAudit = rawEntries.map((a: any) => ({
+            id: a.id || a._id,
+            bookingRef: a.bookingRef || undefined,
+            action: a.action,
+            actor: a.actor,
+            details: a.details,
+            createdAt: new Date(a.createdAt).getTime(),
+          }));
+          setLiveAudit(mappedAudit);
+          cachedAdminAudit = mappedAudit;
+          try {
+            if (typeof window !== "undefined") localStorage.setItem("venueflow_cached_admin_audit", JSON.stringify(mappedAudit));
+          } catch { /* ignore */ }
         }
       }
     } catch {

@@ -108,7 +108,7 @@ function ContactPage() {
               <div className="mt-4 space-y-2">
                 {eventConfig.contact.whatsapp.map((num, i) => (
                   <Button
-                    key={num}
+                    key={`${num}-${i}`}
                     asChild
                     variant="outline"
                     className="w-full justify-between border-emerald-600/30 bg-background text-emerald-800 dark:text-emerald-300 font-bold hover:bg-emerald-500/10"
