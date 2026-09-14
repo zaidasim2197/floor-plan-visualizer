@@ -7,6 +7,9 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  react: {
+    jsxRuntime: "automatic",
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
@@ -18,6 +21,14 @@ export default defineConfig({
     },
   },
   vite: {
+    oxc: {
+      jsx: {
+        development: false,
+      },
+    },
+    esbuild: {
+      jsxDev: false,
+    },
     resolve: {
       alias: [
         { find: "punycode/", replacement: "punycode" },
