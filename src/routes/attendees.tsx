@@ -35,37 +35,19 @@ interface DisplayAttendee {
   status: BookingStatus;
 }
 
-let cachedAttendeesList: Array<{
-  spaceNumber: string;
-  zone?: string;
-  companyName: string;
-  productService?: string;
-  category?: string;
-}> | null = null;
-
 function AttendeesPage() {
   const localStore = useBookingState();
   const [isAdmin, setIsAdmin] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(() => !cachedAttendeesList);
+  const [loading, setLoading] = useState(true);
+  const currentSlug = activeEventId() || eventConfig.slug || "business-expo";
   const [serverAttendees, setServerAttendees] = useState<Array<{
     spaceNumber: string;
     zone?: string;
     companyName: string;
     productService?: string;
     category?: string;
-  }> | null>(() => {
-    if (cachedAttendeesList) return cachedAttendeesList;
-    if (typeof window !== "undefined") {
-      try {
-        const raw = localStorage.getItem("venueflow_cached_attendees");
-        if (raw) return JSON.parse(raw);
-      } catch {
-        /* ignore */
-      }
-    }
-    return null;
-  });
+  }> | null>(null);
   const [adminServerBookings, setAdminServerBookings] = useState<any[]>([]);
 
   useEffect(() => {
@@ -75,59 +57,62 @@ function AttendeesPage() {
     let mounted = true;
     const slug = activeEventId() || eventConfig.slug || "business-expo";
 
-    const fetchPublicAttendees = fetch(`/api/v1/events/${slug}/attendees`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!mounted) return;
-        const list = Array.isArray(data?.attendees) ? data.attendees : [];
-        setServerAttendees(list);
-        cachedAttendeesList = list;
-        try {
-          if (typeof window !== "undefined") {
-            localStorage.setItem("venueflow_cached_attendees", JSON.stringify(list));
+    const fetchFreshAttendees = async () => {
+      try {
+        const timestamp = Date.now();
+        const res = await fetch(`/api/v1/events/${slug}/attendees?t=${timestamp}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && Array.isArray(data?.attendees)) {
+            setServerAttendees(data.attendees);
           }
-        } catch {
-          /* ignore */
         }
-      })
-      .catch(() => {
-        if (mounted && !serverAttendees) {
-          setServerAttendees([]);
-        }
-      });
 
-    const token = typeof window !== "undefined" ? localStorage.getItem("venueflow_admin_token") : null;
-    const fetchAdminBookings = adminAuth
-      ? fetch(`/api/v1/admin/events/${slug}/bookings?pageSize=100`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        })
-          .then((res) => (res.ok ? res.json() : null))
-          .then((data) => {
-            if (!mounted) return;
-            const bList = data?.bookings ?? data?.data?.bookings;
-            if (Array.isArray(bList)) {
+        if (adminAuth) {
+          const token = typeof window !== "undefined" ? localStorage.getItem("venueflow_admin_token") : null;
+          const adminRes = await fetch(`/api/v1/admin/events/${slug}/bookings?pageSize=100&t=${timestamp}`, {
+            cache: "no-store",
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              "Cache-Control": "no-cache",
+              Pragma: "no-cache",
+            },
+          });
+          if (adminRes.ok) {
+            const adminData = await adminRes.json();
+            const bList = adminData?.bookings ?? adminData?.data?.bookings;
+            if (mounted && Array.isArray(bList)) {
               setAdminServerBookings(bList);
             }
-          })
-          .catch(() => {
-            /* ignore */
-          })
-      : Promise.resolve();
+          }
+        }
+      } catch {
+        /* ignore fetch errors during background polling */
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
 
-    Promise.allSettled([fetchPublicAttendees, fetchAdminBookings]).finally(() => {
-      if (mounted) setLoading(false);
-    });
+    // Immediate initial fetch
+    fetchFreshAttendees();
+
+    // Live continuous polling every 2.5 seconds
+    const interval = setInterval(fetchFreshAttendees, 2500);
 
     return () => {
       mounted = false;
+      clearInterval(interval);
     };
-  }, []);
+  }, [currentSlug]);
 
   const displayedAttendees = useMemo(() => {
     const map = new Map<string, DisplayAttendee>();
     const ALLOWED_STATUSES = new Set(["CONFIRMED", "PAYMENT_REVIEW", "PAYMENT_PENDING"]);
 
-    // 1. Process server public confirmed attendees
+    // 1. Process server public confirmed attendees (live DB source of truth)
     if (serverAttendees && serverAttendees.length > 0) {
       serverAttendees.forEach((att) => {
         if (att.spaceNumber) {
@@ -144,7 +129,7 @@ function AttendeesPage() {
       });
     }
 
-    // 2. If admin, process server admin bookings
+    // 2. If admin, process live server admin bookings
     if (isAdmin && adminServerBookings.length > 0) {
       adminServerBookings.forEach((b: any) => {
         const spaceNum = b.spaceNumber || b.spaceId || b.stallId;
@@ -163,27 +148,25 @@ function AttendeesPage() {
       });
     }
 
-    // 3. Process local store bookings (both demo prototype & reactive sessions)
-    if (localStore?.bookings && localStore.bookings.length > 0) {
+    // 3. If server data is not available yet (offline/fallback), fallback to local store bookings
+    if (!serverAttendees && localStore?.bookings && localStore.bookings.length > 0) {
       localStore.bookings.forEach((b: Booking) => {
         const spaceNum = b.stallId;
         if (!spaceNum) return;
         if (!ALLOWED_STATUSES.has(b.status)) return;
-
-        // If not admin, only show confirmed bookings
         if (!isAdmin && b.status !== "CONFIRMED") return;
 
         const stall = stalls.find((s) => s.id === spaceNum || s.stallNumber === spaceNum);
-
-        // Overlay/merge
-        map.set(spaceNum, {
-          spaceNumber: spaceNum,
-          zone: stall?.zone,
-          companyName: b.companyName,
-          productService: b.productService || stall?.description,
-          category: stall?.category,
-          status: b.status,
-        });
+        if (!map.has(spaceNum)) {
+          map.set(spaceNum, {
+            spaceNumber: spaceNum,
+            zone: stall?.zone,
+            companyName: b.companyName,
+            productService: b.productService || stall?.description,
+            category: stall?.category,
+            status: b.status,
+          });
+        }
       });
     }
 

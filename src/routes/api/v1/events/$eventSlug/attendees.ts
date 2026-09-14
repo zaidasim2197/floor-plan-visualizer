@@ -13,6 +13,7 @@ export const Route = createFileRoute("/api/v1/events/$eventSlug/attendees")({
           await connectDB();
           const event =
             (await Event.findOne({ slug: params.eventSlug }).lean()) ||
+            (await Event.findOne({ slug: new RegExp(`^${params.eventSlug}$`, "i") }).lean()) ||
             (await Event.findOne({}).lean());
           if (!event) return apiError(404, "EVENT_NOT_FOUND", "Event not found.");
 
@@ -23,15 +24,7 @@ export const Route = createFileRoute("/api/v1/events/$eventSlug/attendees")({
             .select("spaceId companyName productService")
             .lean();
 
-          const spaceIdsOrNumbers = confirmedBookings.map((b) => b.spaceId);
-          const validObjectIds = spaceIdsOrNumbers.filter((id) => mongoose.Types.ObjectId.isValid(id));
-          const spaces = await Space.find({
-            eventId: event._id,
-            $or: [
-              { _id: { $in: validObjectIds } },
-              { spaceNumber: { $in: spaceIdsOrNumbers } },
-            ],
-          })
+          const spaces = await Space.find({ eventId: event._id })
             .select("spaceNumber zone category")
             .lean();
 
@@ -49,7 +42,15 @@ export const Route = createFileRoute("/api/v1/events/$eventSlug/attendees")({
             };
           });
 
-          return apiOk({ attendees });
+          return new Response(JSON.stringify({ attendees }), {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+              "Pragma": "no-cache",
+              "Expires": "0",
+            },
+          });
         }),
     },
   },
