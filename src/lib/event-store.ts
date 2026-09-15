@@ -16,7 +16,7 @@ interface Catalog {
   activeId: string;
   revision: number;
 }
-const KEY = "venueflow-event-catalog-v1";
+const KEY = "venueflow-event-catalog-v2";
 export const DEFAULT_EVENT_ID = "business-expo";
 const secondSpaces: Stall[] = Array.from({ length: 12 }, (_, i) => ({
   id: `M${String(i + 1).padStart(2, "0")}`,
@@ -53,7 +53,7 @@ export function sampleEvents(): ManagedEvent[] {
         startDate: "2027-03-20T10:00:00+05:00",
         endDate: "2027-03-20T20:00:00+05:00",
         dateLabel: "20 March 2027",
-        timeLabel: "10:00 – 20:00 PKT",
+        timeLabel: "10:00 – 20:00 EST",
         venue: {
           name: "Garden Pavilion",
           city: "Chicago, USA",
@@ -171,7 +171,7 @@ export function saveEvent(input: EventForm, id?: string) {
       startDate,
       endDate,
       dateLabel: dateFormat.formatRange(new Date(startDate), new Date(endDate)),
-      timeLabel: `${data.startDate.slice(11, 16)} – ${data.endDate.slice(11, 16)} PKT`,
+      timeLabel: `${data.startDate.slice(11, 16)} – ${data.endDate.slice(11, 16)} EST`,
       venue: { name: data.venue, city: data.city, address: data.address },
       contact: { email: data.email, phone: data.phone, whatsapp: [data.whatsapp] },
       booking: { ...base.booking, paymentPendingMinutes: data.holdMinutes },

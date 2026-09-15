@@ -68,7 +68,7 @@ function ContactPage() {
                   <div>
                     <dt className="text-xs font-bold text-muted-foreground uppercase">Email Support</dt>
                     <dd className="mt-0.5 font-semibold text-foreground">{eventConfig.contact.email}</dd>
-                    <dd className="text-xs text-muted-foreground">Mon - Sat: 9:00 AM - 6:00 PM PKT</dd>
+                    <dd className="text-xs text-muted-foreground">Mon - Sat: 9:00 AM - 6:00 PM EST</dd>
                   </div>
                 </div>
 

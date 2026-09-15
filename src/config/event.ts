@@ -13,7 +13,7 @@ export const defaultEventConfig = {
   startDate: "2027-01-28T09:00:00+05:00",
   endDate: "2027-01-29T18:00:00+05:00",
   dateLabel: "28 – 29 January 2027",
-  timeLabel: "09:00 – 18:00 PKT",
+  timeLabel: "09:00 – 18:00 EST",
   venue: {
     name: "VenueFlow Convention Center, Grand Exhibition Hall",
     city: "New York, USA",
