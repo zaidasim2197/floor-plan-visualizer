@@ -16,14 +16,14 @@ export const defaultEventConfig = {
   timeLabel: "09:00 – 18:00 PKT",
   venue: {
     name: "VenueFlow Convention Center, Grand Exhibition Hall",
-    city: "Karachi, Pakistan",
-    address: "VenueFlow Convention Center, Main Expo Boulevard, Karachi",
+    city: "New York, USA",
+    address: "VenueFlow Convention Center, Main Expo Boulevard, New York",
   },
-  currency: "PKR",
+  currency: "USD",
   contact: {
     email: "events@venueflow-demo.com",
-    phone: "+92 21 0000 0000",
-    whatsapp: ["+92 111 1111111", "+92 111 1111111"],
+    phone: "+1 212 555 0000",
+    whatsapp: ["+1 212 555 1111", "+1 212 555 2222"],
   },
   booking: {
     /** Temporary hold on an unpaid booking. */

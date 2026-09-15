@@ -45,7 +45,7 @@ export function sampleEvents(): ManagedEvent[] {
       config: {
         ...structuredClone(defaultEventConfig),
         slug: "makers-market",
-        name: "Lahore Makers Market 2027",
+        name: "Chicago Makers Market 2027",
         edition: "Spring 2027",
         tagline: "Independent design. Local craft. A shared creative space.",
         description:
@@ -56,13 +56,13 @@ export function sampleEvents(): ManagedEvent[] {
         timeLabel: "10:00 – 20:00 PKT",
         venue: {
           name: "Garden Pavilion",
-          city: "Lahore, Pakistan",
-          address: "12 Garden Avenue, Gulberg, Lahore",
+          city: "Chicago, USA",
+          address: "12 Garden Avenue, Chicago",
         },
         contact: {
           email: "hello@makers.example",
-          phone: "+92 42 5550 1200",
-          whatsapp: ["+92 111 1111111", "+92 111 1111111"],
+          phone: "+1 312 555 1200",
+          whatsapp: ["+1 312 555 1111", "+1 312 555 2222"],
         },
         booking: { paymentPendingMinutes: 30, paymentReviewGraceHours: 24 },
         floorPlanLabel: "Makers Market Layout",
@@ -102,7 +102,7 @@ export function initializeEvents() {
           ev.config.booking.paymentPendingMinutes = 30;
         }
         if (ev.sample || ev.id === DEFAULT_EVENT_ID || ev.id === "makers-market") {
-          ev.config.contact.whatsapp = ["+92 111 1111111", "+92 111 1111111"];
+          ev.config.contact.whatsapp = ["+1 312 555 1111", "+1 312 555 2222"];
         }
       });
     }
@@ -149,14 +149,14 @@ export function saveEvent(input: EventForm, id?: string) {
   if (!catalog) throw new Error("Event catalog is not ready.");
   const previous = catalog.events.find((e) => e.id === id);
   const base = previous?.config ?? structuredClone(defaultEventConfig);
-  // Event times are entered in Pakistan time, independent of the operator's device timezone.
+  // Event times are entered in US time, independent of the operator's device timezone.
   const startDate = data.startDate.slice(0, 16) + ":00+05:00";
   const endDate = data.endDate.slice(0, 16) + ":00+05:00";
   const dateFormat = new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
-    timeZone: "Asia/Karachi",
+    timeZone: "America/New_York",
   });
   const event: ManagedEvent = {
     id: previous?.id ?? crypto.randomUUID(),

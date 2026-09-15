@@ -65,7 +65,7 @@ function seed(): StoreState {
       customerName: customer,
       companyName: company,
       email: `${company.toLowerCase().replace(/[^a-z]/g, "")}@demo-mail.test`,
-      phone: "+92 300 000000" + (state.seq % 10),
+      phone: "+1 555 000000" + (state.seq % 10),
       productService: "Demo product / service listing",
       notes: "",
       amount: stall.price,
@@ -433,7 +433,7 @@ export function createBooking(
     "ADMIN",
     eventConfig.contact.email,
     `New booking request — ${booking.stallId} (${booking.reference})`,
-    `${booking.customerName} of ${booking.companyName} has requested space ${booking.stallId}. Amount: PKR ${booking.amount.toLocaleString()}. Payment verification required.`,
+    `${booking.customerName} of ${booking.companyName} has requested space ${booking.stallId}. Amount: USD ${booking.amount.toLocaleString()}. Payment verification required.`,
     booking.reference,
   );
   if (booking.status === "PAYMENT_PENDING") {
@@ -574,7 +574,7 @@ export function confirmOnlineCardPayment(reference: string, cardTxnRef: string):
     "ADMIN",
     eventConfig.contact.email,
     `Online Payment Confirmed — ${b.reference}`,
-    `Online credit card payment (${cardTxnRef}) processed for ${b.companyName} on space ${b.stallId}. Amount: PKR ${b.amount.toLocaleString()}. Space is confirmed.`,
+    `Online credit card payment (${cardTxnRef}) processed for ${b.companyName} on space ${b.stallId}. Amount: USD ${b.amount.toLocaleString()}. Space is confirmed.`,
     b.reference,
   );
   notify(
@@ -688,7 +688,7 @@ export function reassignBooking(reference: string, newStallId: string): Result<B
     "CUSTOMER",
     b.email,
     `Your space has been updated — ${b.reference}`,
-    `Your exhibition space has been moved from ${from} to ${newStallId}. Amount: PKR ${b.amount.toLocaleString()}.`,
+    `Your exhibition space has been moved from ${from} to ${newStallId}. Amount: USD ${b.amount.toLocaleString()}.`,
     b.reference,
   );
   emit();

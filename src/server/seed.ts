@@ -5,8 +5,8 @@
  *   npx tsx src/server/seed.ts
  *
  * Creates:
- *  - Event 1: VenueFlow Business Expo 2027 (20 spaces, PKR, 30-min hold, Karachi)
- *  - Event 2: Lahore Makers Market 2027    (12 spaces, PKR, 45-min hold, Lahore)
+ *  - Event 1: VenueFlow Business Expo 2027 (20 spaces, USD, 30-min hold, New York)
+ *  - Event 2: Chicago Makers Market 2027    (12 spaces, USD, 45-min hold, Chicago)
  *  - One SUPER_ADMIN user (credentials from SEED_ADMIN_USERNAME / SEED_ADMIN_PASSWORD env)
  */
 
@@ -170,9 +170,9 @@ async function seed() {
       endDate: "2027-01-29T18:00:00+05:00",
       dateLabel: "28 – 29 January 2027",
       timeLabel: "09:00 – 18:00 PKT",
-      venue: { name: "VenueFlow Convention Center, Grand Exhibition Hall", city: "Karachi, Pakistan", address: "VenueFlow Convention Center, Main Expo Boulevard, Karachi" },
-      currency: "PKR",
-      contact: { email: "events@venueflow-demo.com", phone: "+92 21 0000 0000", whatsapp: ["+92 111 1111111", "+92 111 1111111"] },
+      venue: { name: "VenueFlow Convention Center, Grand Exhibition Hall", city: "New York, USA", address: "VenueFlow Convention Center, Main Expo Boulevard, New York" },
+      currency: "USD",
+      contact: { email: "events@venueflow-demo.com", phone: "+1 212 555 0000", whatsapp: ["+1 212 555 1111", "+1 212 555 2222"] },
       booking: { paymentPendingMinutes: 30, paymentReviewGraceHours: 24 },
       floorPlanLabel: "VenueFlow Exhibition Hall Layout",
       paymentProviders: ["PAYFAST", "MANUAL"],
@@ -204,13 +204,13 @@ async function seed() {
     console.log(`[seed] Event 1 floor plan + ${EXPO_SPACES.length} spaces created.`);
   }
 
-  // ── Event 2 — Lahore Makers Market 2027 ─────────────────────────────────────
+  // ── Event 2 — Chicago Makers Market 2027 ─────────────────────────────────────
   const makersSlug = "makers-market";
   let makersEvent = await Event.findOne({ slug: makersSlug });
   if (!makersEvent) {
     makersEvent = await Event.create({
       slug: makersSlug,
-      name: "Lahore Makers Market 2027",
+      name: "Chicago Makers Market 2027",
       tagline: "Independent design. Local craft. A shared creative space.",
       description: "Discover independent ceramics, textiles, homeware and illustration from local makers in a one-day curated market.",
       edition: "Spring 2027",
@@ -218,9 +218,9 @@ async function seed() {
       endDate: "2027-03-20T20:00:00+05:00",
       dateLabel: "20 March 2027",
       timeLabel: "10:00 – 20:00 PKT",
-      venue: { name: "Garden Pavilion", city: "Lahore, Pakistan", address: "12 Garden Avenue, Gulberg, Lahore" },
-      currency: "PKR",
-      contact: { email: "hello@makers.example", phone: "+92 42 5550 1200", whatsapp: ["+92 111 1111111", "+92 111 1111111"] },
+      venue: { name: "Garden Pavilion", city: "Chicago, USA", address: "12 Garden Avenue, Chicago" },
+      currency: "USD",
+      contact: { email: "hello@makers.example", phone: "+1 312 555 1200", whatsapp: ["+1 312 555 1111", "+1 312 555 2222"] },
       booking: { paymentPendingMinutes: 30, paymentReviewGraceHours: 24 },
       floorPlanLabel: "Makers Market Layout",
       paymentProviders: ["MANUAL"],

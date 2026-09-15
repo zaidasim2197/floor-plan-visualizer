@@ -14,7 +14,7 @@ import { t as Textarea } from "./textarea-BE9s_JWl.mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/book._stallId-DiAdpFrW.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
-var Checkbox = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Checkbox$1, {
+var Checkbox = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */(0, import_jsx_runtime.jsx)(Checkbox$1, {
 	ref,
 	className: cn("grid place-content-center peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground", className),
 	...props,
@@ -62,9 +62,10 @@ function BookStallPage() {
 		const interval = setInterval(calc, 1e3);
 		return () => clearInterval(interval);
 	}, [currentBooking]);
-	if (!stall) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SiteLayout, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "mx-auto max-w-md py-20 px-4 text-center",
-		children: [
+	if (!stall) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SiteLayout, {
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "mx-auto max-w-md py-20 px-4 text-center",
+			children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleAlert, { className: "mx-auto h-12 w-12 text-destructive" }),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
 				className: "mt-4 text-xl font-bold",
@@ -86,8 +87,9 @@ function BookStallPage() {
 					children: "Back to Floor Plan"
 				})
 			})
-		]
-	}) });
+			]
+		})
+	});
 	const handleFormSubmit = (e) => {
 		e.preventDefault();
 		setError(null);
@@ -128,96 +130,111 @@ function BookStallPage() {
 		const s = secs % 60;
 		return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 	};
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SiteLayout, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("section", {
-		className: "border-b border-border bg-surface py-8",
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "mx-auto w-full max-w-7xl px-4 sm:px-6",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
-				to: "/floor-plan",
-				className: "inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground mb-3",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowLeft, { className: "h-3.5 w-3.5" }), " Back to Floor Plan"]
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex flex-wrap items-center justify-between gap-4",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					className: "eyebrow text-primary",
-					children: stall.zone
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h1", {
-					className: "text-2xl font-extrabold tracking-tight sm:text-3xl text-foreground",
-					children: ["Exhibition Space Booking — ", stall.stallNumber]
-				})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "flex items-center gap-3",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-						className: "text-sm font-semibold text-muted-foreground",
-						children: "Price:"
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-						className: "text-xl font-extrabold text-foreground",
-						children: formatMoney(stall.price)
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SiteLayout, {
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("section", {
+			className: "border-b border-border bg-surface py-8",
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mx-auto w-full max-w-7xl px-4 sm:px-6",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
+					to: "/floor-plan",
+					className: "inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground mb-3",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowLeft, { className: "h-3.5 w-3.5" }), " Back to Floor Plan"]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex flex-wrap items-center justify-between gap-4",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "eyebrow text-primary",
+							children: stall.zone
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h1", {
+							className: "text-2xl font-extrabold tracking-tight sm:text-3xl text-foreground",
+							children: ["Exhibition Space Booking — ", stall.stallNumber]
+						})]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center gap-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "text-sm font-semibold text-muted-foreground",
+							children: "Price:"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "text-xl font-extrabold text-foreground",
+							children: formatMoney(stall.price)
+						})]
 					})]
 				})]
-			})]
-		})
-	}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("section", {
-		className: "mx-auto w-full max-w-7xl px-4 py-12 sm:px-6",
-		children: currentBooking ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "mx-auto max-w-3xl space-y-8",
-			children: [
+			})
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("section", {
+			className: "mx-auto w-full max-w-7xl px-4 py-12 sm:px-6",
+			children: currentBooking ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mx-auto max-w-3xl space-y-8",
+				children: [
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "rounded-xl border border-border bg-card p-6 shadow-sm",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "flex items-start justify-between gap-4 border-b border-border pb-4",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: "flex items-start justify-between gap-4 border-b border-border pb-4",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 								className: "text-xs font-bold text-muted-foreground uppercase",
 								children: "Booking Reference"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 								className: "text-2xl font-extrabold tracking-tight text-foreground",
 								children: currentBooking.reference
-							})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatusBadge, { status: currentBooking.status })]
-						}),
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatusBadge, { status: currentBooking.status })]
+					}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "mt-6 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4",
-							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "text-xs text-muted-foreground",
-									children: "Space"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-									className: "font-bold text-foreground",
-									children: currentBooking.stallId
-								})] }),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "text-xs text-muted-foreground",
-									children: "Company"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-									className: "font-bold text-foreground truncate",
-									children: currentBooking.companyName
-								})] }),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "text-xs text-muted-foreground",
-									children: "Amount"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-									className: "font-bold text-foreground",
-									children: formatMoney(currentBooking.amount)
-								})] }),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "text-xs text-muted-foreground",
-									children: "Payment Status"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-									className: "font-bold text-primary",
-									children: currentBooking.paymentStatus
-								})] })
-							]
+						className: "mt-6 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4",
+						children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "text-xs text-muted-foreground",
+								children: "Space"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+								className: "font-bold text-foreground",
+								children: currentBooking.stallId
+							})]
 						}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "text-xs text-muted-foreground",
+								children: "Company"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+								className: "font-bold text-foreground truncate",
+								children: currentBooking.companyName
+							})]
+						}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "text-xs text-muted-foreground",
+								children: "Amount"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+								className: "font-bold text-foreground",
+								children: formatMoney(currentBooking.amount)
+							})]
+						}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "text-xs text-muted-foreground",
+								children: "Payment Status"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+								className: "font-bold text-primary",
+								children: currentBooking.paymentStatus
+							})]
+						})
+						]
+					}),
 						currentBooking.status === "PAYMENT_PENDING" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 							className: "mt-6 rounded-lg bg-amber-500/10 border border-amber-500/30 p-4 flex items-center justify-between",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 								className: "flex items-center gap-3",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Clock, { className: "h-6 w-6 text-amber-600 animate-pulse" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-									className: "text-xs font-bold text-amber-900 dark:text-amber-300 uppercase",
-									children: "Temporary Hold Expiration"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-									className: "text-xs text-amber-800 dark:text-amber-400",
-									children: "Complete payment before timer expires to retain space."
-								})] })]
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Clock, { className: "h-6 w-6 text-amber-600 animate-pulse" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										className: "text-xs font-bold text-amber-900 dark:text-amber-300 uppercase",
+										children: "Temporary Hold Expiration"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										className: "text-xs text-amber-800 dark:text-amber-400",
+										children: "Complete payment before timer expires to retain space."
+									})]
+								})]
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 								className: "text-2xl font-extrabold text-amber-900 dark:text-amber-200 tracking-mono",
 								children: formatTimer(secondsLeft)
@@ -225,127 +242,129 @@ function BookStallPage() {
 						})
 					]
 				}),
-				currentBooking.status === "PAYMENT_PENDING" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "rounded-xl border border-border bg-card p-6 shadow-sm space-y-6",
-					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-							className: "text-lg font-bold text-foreground",
-							children: "Payment Instructions"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-							className: "mt-1 text-sm text-muted-foreground",
-							children: [
-								"Please transfer the total booking fee of ",
+					currentBooking.status === "PAYMENT_PENDING" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "rounded-xl border border-border bg-card p-6 shadow-sm space-y-6",
+						children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+								className: "text-lg font-bold text-foreground",
+								children: "Payment Instructions"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+								className: "mt-1 text-sm text-muted-foreground",
+								children: [
+									"Please transfer the total booking fee of ",
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: formatMoney(currentBooking.amount) }),
-								" to the official event account below."
-							]
-						})] }),
+									" to the official event account below."
+								]
+							})]
+						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 							className: "rounded-lg bg-secondary p-4 space-y-2 text-sm font-mono border border-border",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "flex justify-between",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										className: "text-muted-foreground",
-										children: "Bank Name:"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										className: "font-bold text-foreground",
-										children: "Habib Bank Limited (HBL)"
-									})]
-								}),
+								className: "flex justify-between",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "text-muted-foreground",
+									children: "Bank Name:"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "font-bold text-foreground",
+									children: "Habib Bank Limited (HBL)"
+								})]
+							}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "flex justify-between",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										className: "text-muted-foreground",
-										children: "Account Title:"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										className: "font-bold text-foreground",
-										children: "Marriott Trade & Exhibitions Ltd"
-									})]
-								}),
+								className: "flex justify-between",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "text-muted-foreground",
+									children: "Account Title:"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "font-bold text-foreground",
+									children: "Marriott Trade & Exhibitions Ltd"
+								})]
+							}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "flex justify-between",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										className: "text-muted-foreground",
-										children: "IBAN / Account #:"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										className: "font-bold text-foreground",
-										children: "PK36 HABB 0001 2345 6789 0102"
-									})]
-								}),
+								className: "flex justify-between",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "text-muted-foreground",
+									children: "IBAN / Account #:"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "font-bold text-foreground",
+									children: "PK36 HABB 0001 2345 6789 0102"
+								})]
+							}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "flex justify-between",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										className: "text-muted-foreground",
-										children: "Reference Code:"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										className: "font-bold text-primary",
-										children: currentBooking.reference
-									})]
-								})
+								className: "flex justify-between",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "text-muted-foreground",
+									children: "Reference Code:"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "font-bold text-primary",
+									children: currentBooking.reference
+								})]
+							})
 							]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 							className: "rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-5 space-y-3",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "flex items-center gap-2",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Send, { className: "h-5 w-5 text-emerald-600" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
-										className: "text-sm font-bold text-foreground",
-										children: "Option 1: Send Receipt via WhatsApp"
-									})]
-								}),
+								className: "flex items-center gap-2",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Send, { className: "h-5 w-5 text-emerald-600" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
+									className: "text-sm font-bold text-foreground",
+									children: "Option 1: Send Receipt via WhatsApp"
+								})]
+							}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-									className: "text-xs text-muted-foreground",
-									children: "Take a screenshot of your bank transfer receipt and send it directly to our administration team on WhatsApp for fast verification."
-								}),
+								className: "text-xs text-muted-foreground",
+								children: "Take a screenshot of your bank transfer receipt and send it directly to our administration team on WhatsApp for fast verification."
+							}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-									asChild: true,
-									className: "w-full bg-emerald-600 hover:bg-emerald-700 font-bold",
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
-										href: whatsappLink(eventConfig.contact.whatsapp[0], `Payment Receipt Submission:\nBooking ID: ${currentBooking.reference}\nSpace: ${currentBooking.stallId}\nCompany: ${currentBooking.companyName}\nAmount: PKR ${currentBooking.amount.toLocaleString()}`),
-										target: "_blank",
-										rel: "noreferrer",
-										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Send, { className: "mr-2 h-4 w-4" }), " Send Receipt via WhatsApp"]
-									})
+								asChild: true,
+								className: "w-full bg-emerald-600 hover:bg-emerald-700 font-bold",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
+									href: whatsappLink(eventConfig.contact.whatsapp[0], `Payment Receipt Submission:\nBooking ID: ${currentBooking.reference}\nSpace: ${currentBooking.stallId}\nCompany: ${currentBooking.companyName}\nAmount: PKR ${currentBooking.amount.toLocaleString()}`),
+									target: "_blank",
+									rel: "noreferrer",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Send, { className: "mr-2 h-4 w-4" }), " Send Receipt via WhatsApp"]
 								})
+							})
 							]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 							className: "rounded-lg border border-border p-5 space-y-3 bg-background",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
-									className: "text-sm font-bold text-foreground",
-									children: "Option 2: Simulate Payment (Demo Action)"
-								}),
+								className: "text-sm font-bold text-foreground",
+								children: "Option 2: Simulate Payment (Demo Action)"
+							}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-									className: "text-xs text-muted-foreground",
-									children: [
-										"Submit payment evidence directly inside the application to move status to ",
+								className: "text-xs text-muted-foreground",
+								children: [
+									"Submit payment evidence directly inside the application to move status to ",
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: "PAYMENT_REVIEW" }),
-										"."
-									]
-								}),
+									"."
+								]
+							}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-									onSubmit: handleSimulatePayment,
-									className: "flex gap-2",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-										placeholder: "Transaction Reference (e.g. TRX-992140)",
-										value: paymentRefInput,
-										onChange: (e) => setPaymentRefInput(e.target.value)
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-										type: "submit",
-										className: "font-bold shrink-0",
-										disabled: submittingPayment,
-										children: "Simulate Payment"
-									})]
-								})
+								onSubmit: handleSimulatePayment,
+								className: "flex gap-2",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+									placeholder: "Transaction Reference (e.g. TRX-992140)",
+									value: paymentRefInput,
+									onChange: (e) => setPaymentRefInput(e.target.value)
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+									type: "submit",
+									className: "font-bold shrink-0",
+									disabled: submittingPayment,
+									children: "Simulate Payment"
+								})]
+							})
 							]
 						})
-					]
-				}),
-				currentBooking.status === "PAYMENT_REVIEW" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "rounded-xl border border-blue-500/30 bg-blue-500/5 p-6 text-center space-y-3",
-					children: [
+						]
+					}),
+					currentBooking.status === "PAYMENT_REVIEW" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "rounded-xl border border-blue-500/30 bg-blue-500/5 p-6 text-center space-y-3",
+						children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheck, { className: "mx-auto h-12 w-12 text-blue-600" }),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
 							className: "text-lg font-bold text-foreground",
@@ -378,11 +397,11 @@ function BookStallPage() {
 								})
 							})]
 						})
-					]
-				}),
-				currentBooking.status === "CONFIRMED" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-6 text-center space-y-3",
-					children: [
+						]
+					}),
+					currentBooking.status === "CONFIRMED" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-6 text-center space-y-3",
+						children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShieldCheck, { className: "mx-auto h-12 w-12 text-emerald-600" }),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
 							className: "text-lg font-bold text-foreground",
@@ -409,21 +428,21 @@ function BookStallPage() {
 								})
 							})
 						})
-					]
-				})
-			]
-		}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "grid gap-12 lg:grid-cols-12",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "lg:col-span-5 space-y-6",
+						]
+					})
+				]
+			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "grid gap-12 lg:grid-cols-12",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "rounded-xl border border-border bg-card p-6 shadow-xs",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
-						className: "text-lg font-bold text-foreground border-b border-border pb-3",
-						children: "Selected Space Summary"
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("dl", {
-						className: "mt-4 space-y-3 text-sm",
-						children: [
+					className: "lg:col-span-5 space-y-6",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "rounded-xl border border-border bg-card p-6 shadow-xs",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+							className: "text-lg font-bold text-foreground border-b border-border pb-3",
+							children: "Selected Space Summary"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("dl", {
+							className: "mt-4 space-y-3 text-sm",
+							children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 								className: "flex justify-between",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("dt", {
@@ -474,29 +493,29 @@ function BookStallPage() {
 									children: formatMoney(stall.price)
 								})]
 							})
-						]
-					})]
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "rounded-xl border border-border bg-card p-6 shadow-xs space-y-3",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
-						className: "text-sm font-bold text-foreground flex items-center gap-2",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShieldCheck, { className: "h-4 w-4 text-emerald-600" }), " Hold Protection Notice"]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-						className: "text-xs text-muted-foreground leading-relaxed",
-						children: [
-							"Submitting this form immediately reserves space ",
+							]
+						})]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "rounded-xl border border-border bg-card p-6 shadow-xs space-y-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+							className: "text-sm font-bold text-foreground flex items-center gap-2",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShieldCheck, { className: "h-4 w-4 text-emerald-600" }), " Hold Protection Notice"]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+							className: "text-xs text-muted-foreground leading-relaxed",
+							children: [
+								"Submitting this form immediately reserves space ",
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: stall.stallNumber }),
-							" for ",
-							eventConfig.booking.paymentPendingMinutes,
-							" minutes. No other user can book this space while your hold is active."
-						]
+								" for ",
+								eventConfig.booking.paymentPendingMinutes,
+								" minutes. No other user can book this space while your hold is active."
+							]
+						})]
 					})]
-				})]
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "lg:col-span-7",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "rounded-xl border border-border bg-card p-8 shadow-xs",
-					children: [
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "lg:col-span-7",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "rounded-xl border border-border bg-card p-8 shadow-xs",
+						children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
 							className: "text-2xl font-extrabold text-foreground",
 							children: "Complete Exhibitor Booking Form"
@@ -505,14 +524,14 @@ function BookStallPage() {
 							className: "mt-1 text-sm text-muted-foreground",
 							children: "Provide your organization details to initialize your temporary reservation."
 						}),
-						error && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "mt-6 rounded-md bg-destructive/10 border border-destructive/30 p-3 text-xs font-semibold text-destructive flex items-center gap-2",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleAlert, { className: "h-4 w-4 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: error })]
-						}),
+							error && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "mt-6 rounded-md bg-destructive/10 border border-destructive/30 p-3 text-xs font-semibold text-destructive flex items-center gap-2",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleAlert, { className: "h-4 w-4 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: error })]
+							}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-							onSubmit: handleFormSubmit,
-							className: "mt-6 space-y-5",
-							children: [
+								onSubmit: handleFormSubmit,
+								className: "mt-6 space-y-5",
+								children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 									className: "grid gap-4 sm:grid-cols-2",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
@@ -523,7 +542,7 @@ function BookStallPage() {
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
 											id: "customerName",
 											required: true,
-											placeholder: "e.g. Hammad Sheikh",
+											placeholder: "",
 											value: customerName,
 											onChange: (e) => setCustomerName(e.target.value)
 										})]
@@ -535,7 +554,7 @@ function BookStallPage() {
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
 											id: "companyName",
 											required: true,
-											placeholder: "e.g. Apex Industrial Solutions",
+											placeholder: "",
 											value: companyName,
 											onChange: (e) => setCompanyName(e.target.value)
 										})]
@@ -552,7 +571,7 @@ function BookStallPage() {
 											id: "email",
 											type: "email",
 											required: true,
-											placeholder: "hammad@apex.com",
+											placeholder: "",
 											value: email,
 											onChange: (e) => setEmail(e.target.value)
 										})]
@@ -618,13 +637,14 @@ function BookStallPage() {
 									disabled: submitting,
 									children: submitting ? "Reserving Space..." : `Submit Request & Reserve Space (${stall.stallNumber})`
 								})
-							]
-						})
-					]
-				})
-			})]
-		})
-	})] });
+								]
+							})
+						]
+					})
+				})]
+			})
+		})]
+	});
 }
 //#endregion
 export { BookStallPage as component };

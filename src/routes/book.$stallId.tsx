@@ -290,12 +290,11 @@ function BookStallPage() {
         if (refToUse) headers["x-booking-reference"] = refToUse;
 
         const res = await fetch(
-          `/api/v1/events/${activeEvtSlug}/spaces/${stall.id}${
-            tokenToUse
-              ? `?holdToken=${encodeURIComponent(tokenToUse)}`
-              : refToUse
-                ? `?reference=${encodeURIComponent(refToUse)}`
-                : ""
+          `/api/v1/events/${activeEvtSlug}/spaces/${stall.id}${tokenToUse
+            ? `?holdToken=${encodeURIComponent(tokenToUse)}`
+            : refToUse
+              ? `?reference=${encodeURIComponent(refToUse)}`
+              : ""
           }`,
           { headers },
         );
@@ -350,10 +349,9 @@ function BookStallPage() {
             } else {
               setServerBooking(null);
               toast.error(
-                `Space ${stall.stallNumber} is currently ${
-                  spaceData.displayStatus === "CONFIRMED" || ab.status === "CONFIRMED"
-                    ? "already booked"
-                    : "on hold by another buyer"
+                `Space ${stall.stallNumber} is currently ${spaceData.displayStatus === "CONFIRMED" || ab.status === "CONFIRMED"
+                  ? "already booked"
+                  : "on hold by another buyer"
                 }. Please select an available space.`,
               );
               navigate({ to: "/floor-plan" });
@@ -625,7 +623,7 @@ function BookStallPage() {
         body: JSON.stringify({
           client: eventConfig.safepay.publicKey,
           amount: currentBooking.amount,
-          currency: "PKR",
+          currency: "USD",
           environment: "sandbox",
           redirect_url: returnUrl,
           cancel_url: cancelUrl,
@@ -705,23 +703,23 @@ function BookStallPage() {
       setServerBooking((prev) =>
         prev
           ? {
-              ...prev,
-              status: "CONFIRMED",
-              paymentStatus: "VERIFIED",
-              paymentReference: cardTxnRef,
-            }
+            ...prev,
+            status: "CONFIRMED",
+            paymentStatus: "VERIFIED",
+            paymentReference: cardTxnRef,
+          }
           : {
-              reference: currentBooking.reference,
-              stallId: stall.stallNumber || stall.id,
-              customerName: currentBooking.customerName,
-              companyName: currentBooking.companyName,
-              email: currentBooking.email,
-              amount: currentBooking.amount,
-              status: "CONFIRMED",
-              paymentStatus: "VERIFIED",
-              paymentReference: cardTxnRef,
-              expiresAt: currentBooking.expiresAt,
-            },
+            reference: currentBooking.reference,
+            stallId: stall.stallNumber || stall.id,
+            customerName: currentBooking.customerName,
+            companyName: currentBooking.companyName,
+            email: currentBooking.email,
+            amount: currentBooking.amount,
+            status: "CONFIRMED",
+            paymentStatus: "VERIFIED",
+            paymentReference: cardTxnRef,
+            expiresAt: currentBooking.expiresAt,
+          },
       );
 
       toast.success("Payment Successful! Your stall booking is confirmed.");
@@ -777,11 +775,11 @@ function BookStallPage() {
       setServerBooking((prev) =>
         prev
           ? {
-              ...prev,
-              status: "PAYMENT_REVIEW",
-              paymentStatus: "PENDING_VERIFICATION",
-              paymentProofImage: proofImageBase64 || undefined,
-            }
+            ...prev,
+            status: "PAYMENT_REVIEW",
+            paymentStatus: "PENDING_VERIFICATION",
+            paymentProofImage: proofImageBase64 || undefined,
+          }
           : null,
       );
 
@@ -837,11 +835,10 @@ function BookStallPage() {
         {heldByOther ? (
           <div className="mx-auto max-w-2xl space-y-6">
             <div
-              className={`rounded-2xl border p-8 sm:p-10 text-center space-y-6 shadow-sm ${
-                heldByOther.status === "CONFIRMED"
-                  ? "border-emerald-500/30 bg-emerald-500/5"
-                  : "border-amber-500/30 bg-amber-500/5"
-              }`}
+              className={`rounded-2xl border p-8 sm:p-10 text-center space-y-6 shadow-sm ${heldByOther.status === "CONFIRMED"
+                ? "border-emerald-500/30 bg-emerald-500/5"
+                : "border-amber-500/30 bg-amber-500/5"
+                }`}
             >
               {heldByOther.status === "CONFIRMED" ? (
                 <ShieldCheck className="mx-auto h-16 w-16 text-emerald-600 animate-pulse" />
@@ -851,11 +848,10 @@ function BookStallPage() {
 
               <div className="space-y-2">
                 <span
-                  className={`inline-block rounded-full px-3.5 py-1 text-xs font-extrabold uppercase tracking-wider ${
-                    heldByOther.status === "CONFIRMED"
-                      ? "bg-emerald-600/10 text-emerald-700 dark:text-emerald-300"
-                      : "bg-amber-500/10 text-amber-800 dark:text-amber-300"
-                  }`}
+                  className={`inline-block rounded-full px-3.5 py-1 text-xs font-extrabold uppercase tracking-wider ${heldByOther.status === "CONFIRMED"
+                    ? "bg-emerald-600/10 text-emerald-700 dark:text-emerald-300"
+                    : "bg-amber-500/10 text-amber-800 dark:text-amber-300"
+                    }`}
                 >
                   {heldByOther.status === "CONFIRMED"
                     ? "Space Confirmed & Booked"
@@ -974,11 +970,10 @@ function BookStallPage() {
                     setPaymentMethod("PAYFAST");
                     localStorage.setItem(`venueflow_payment_method_${stall.id}`, "PAYFAST");
                   }}
-                  className={`flex-1 py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 ${
-                    paymentMethod !== "BANK"
-                      ? "bg-card text-foreground shadow-sm border border-border"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`flex-1 py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 ${paymentMethod !== "BANK"
+                    ? "bg-card text-foreground shadow-sm border border-border"
+                    : "text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                   <CreditCard className="h-4 w-4 text-primary" /> Online Card / PayFast Gateway
                 </button>
@@ -988,11 +983,10 @@ function BookStallPage() {
                     setPaymentMethod("BANK");
                     localStorage.setItem(`venueflow_payment_method_${stall.id}`, "BANK");
                   }}
-                  className={`flex-1 py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 ${
-                    paymentMethod === "BANK"
-                      ? "bg-card text-foreground shadow-sm border border-border"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`flex-1 py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 ${paymentMethod === "BANK"
+                    ? "bg-card text-foreground shadow-sm border border-border"
+                    : "text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                   <Building2 className="h-4 w-4 text-primary" /> Bank Transfer & Deposit Slip
                 </button>
@@ -1175,7 +1169,7 @@ function BookStallPage() {
                         <Input
                           id="cardName"
                           required
-                          placeholder="e.g. Hammad Sheikh"
+                          placeholder=""
                           value={cardName}
                           onChange={(e) => setCardName(e.target.value)}
                         />
@@ -1257,19 +1251,19 @@ function BookStallPage() {
                 <div className="rounded-lg bg-secondary p-4 space-y-2.5 text-xs sm:text-sm font-mono border border-border">
                   <div className="flex justify-between border-b border-border/50 pb-1.5">
                     <span className="text-muted-foreground">Bank Name:</span>
-                    <span className="font-bold text-foreground">Habib Bank Limited (HBL)</span>
+                    <span className="font-bold text-foreground">Global Trust Bank (GTB)</span>
                   </div>
                   <div className="flex justify-between border-b border-border/50 pb-1.5">
                     <span className="text-muted-foreground">Account Title:</span>
                     <span className="font-bold text-foreground">VenueFlow Events Ltd</span>
                   </div>
                   <div className="flex justify-between border-b border-border/50 pb-1.5">
-                    <span className="text-muted-foreground">IBAN Number:</span>
-                    <span className="font-bold text-foreground">PK36 VNFL 0001 2345 6789 0102</span>
+                    <span className="text-muted-foreground">Routing / Account:</span>
+                    <span className="font-bold text-foreground">121000248 / 9988776655</span>
                   </div>
                   <div className="flex justify-between border-b border-border/50 pb-1.5">
-                    <span className="text-muted-foreground">Branch / SWIFT:</span>
-                    <span className="font-bold text-foreground">VNFLPKKA</span>
+                    <span className="text-muted-foreground">SWIFT Code:</span>
+                    <span className="font-bold text-foreground">GTBUS33</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Booking Reference:</span>
@@ -1296,7 +1290,7 @@ function BookStallPage() {
                     <a
                       href={whatsappLink(
                         eventConfig.contact.whatsapp[0],
-                        `Bank Transfer Receipt:\nBooking ID: ${currentBooking.reference}\nSpace: ${currentBooking.stallId}\nCompany: ${currentBooking.companyName}\nAmount: PKR ${currentBooking.amount.toLocaleString()}`,
+                        `Bank Transfer Receipt:\nBooking ID: ${currentBooking.reference}\nSpace: ${currentBooking.stallId}\nCompany: ${currentBooking.companyName}\nAmount: USD ${currentBooking.amount.toLocaleString()}`,
                       )}
                       target="_blank"
                       rel="noreferrer"
@@ -1376,7 +1370,7 @@ function BookStallPage() {
                       </Label>
                       <Input
                         id="paymentRefInput"
-                        placeholder="e.g. HBL-TRX-891042 or slip serial number"
+                        placeholder="e.g. GTB-TRX-891042 or slip serial number"
                         value={paymentRefInput}
                         onChange={(e) => setPaymentRefInput(e.target.value)}
                         className="h-10 text-xs"
@@ -1603,7 +1597,7 @@ function BookStallPage() {
                       <Input
                         id="customerName"
                         required
-                        placeholder="e.g. Hammad Sheikh"
+                        placeholder=""
                         value={customerName}
                         onChange={(e) => setCustomerName(e.target.value)}
                       />
@@ -1614,7 +1608,7 @@ function BookStallPage() {
                       <Input
                         id="companyName"
                         required
-                        placeholder="e.g. Apex Industrial Solutions"
+                        placeholder=""
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
                       />
@@ -1628,7 +1622,7 @@ function BookStallPage() {
                         id="email"
                         type="email"
                         required
-                        placeholder="hammad@apex.com"
+                        placeholder=""
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                       />
@@ -1639,7 +1633,7 @@ function BookStallPage() {
                       <Input
                         id="phone"
                         required
-                        placeholder="+92 300 1234567"
+                        placeholder=""
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                       />
