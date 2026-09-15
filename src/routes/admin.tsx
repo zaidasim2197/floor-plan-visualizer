@@ -788,12 +788,12 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              Booking Engine: Live Sync Active
+              Booking Engine:  Active
             </span>
-            <span className="opacity-30">•</span>
-            <span className="opacity-80">
+            {/* <span className="opacity-30">•</span> */}
+            {/* <span className="opacity-80">
               {lastSyncedAt ? `Synced with Database · ${lastSyncedAt.toLocaleTimeString()}` : "Connecting to Database..."}
-            </span>
+            </span> */}
             <span className="opacity-30">•</span>
             <span className="opacity-80">Notifications: Live</span>
           </div>
@@ -851,11 +851,10 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 key={tab}
                 type="button"
                 onClick={() => setActiveTab(tab as typeof activeTab)}
-                className={`rounded-sm px-3 py-2 transition-colors ${
-                  activeTab === tab
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`rounded-sm px-3 py-2 transition-colors ${activeTab === tab
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 {label}
               </button>
@@ -1317,11 +1316,10 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     <tr key={n.id} className="hover:bg-secondary/40">
                       <td className="px-4 py-3">
                         <span
-                          className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                            n.audience === "ADMIN"
-                              ? "bg-purple-500/10 text-purple-700"
-                              : "bg-blue-500/10 text-blue-700"
-                          }`}
+                          className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${n.audience === "ADMIN"
+                            ? "bg-purple-500/10 text-purple-700"
+                            : "bg-blue-500/10 text-blue-700"
+                            }`}
                         >
                           {n.audience}
                         </span>

@@ -33,7 +33,7 @@ var eventConfig = {
 		adminUsername: "admin",
 		adminPassword: "Admin@123"
 	},
-	floorPlanLabel: "Demo Exhibition Layout"
+	floorPlanLabel: "Exhibition Layout"
 };
 var whatsappLink = (number, message) => `https://wa.me/${number.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
 //#endregion

@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { eventConfig, whatsappLink } from "@/config/event";
+import { eventConfig, emailLink } from "@/config/event";
 import { stalls } from "@/data/floor-plan";
 import { formatMoney } from "@/lib/booking-format";
 import type { Stall, StallStatus } from "@/lib/booking-types";
@@ -370,14 +370,14 @@ function FloorPlanPage() {
 
                   <Button asChild variant="outline" className="w-full h-11 font-bold text-sm">
                     <a
-                      href={whatsappLink(
-                        eventConfig.contact.whatsapp[0],
+                      href={emailLink(
+                        eventConfig.contact.email,
                         `Hello, I am inquiring about exhibition space ${selected.stallNumber} (${selected.category}) at ${eventConfig.name}.`,
                       )}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      Enquire on WhatsApp
+                      Enquire via Email
                     </a>
                   </Button>
                 </div>
@@ -452,14 +452,14 @@ function FloorPlanPage() {
 
                   <Button asChild variant="outline" className="w-full h-10 font-bold text-xs">
                     <a
-                      href={whatsappLink(
-                        eventConfig.contact.whatsapp[0],
+                      href={emailLink(
+                        eventConfig.contact.email,
                         `Hello, I am inquiring about exhibition space ${selected.stallNumber} (${selected.category}) at ${eventConfig.name}.`,
                       )}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      Enquire on WhatsApp
+                      Enquire via Email
                     </a>
                   </Button>
                 </div>

@@ -86,48 +86,48 @@ type RawSpace = {
 
 const EXPO_SPACES: RawSpace[] = [
   // Zone A — West Hall
-  { spaceNumber: "A01", category: "Standard Exhibition Stall", size: "3m x 3m", price: 185000, x: 120, y: 180, w: 90, h: 80, zone: "Zone A — West Hall" },
-  { spaceNumber: "A02", category: "Standard Exhibition Stall", size: "3m x 3m", price: 185000, x: 214, y: 180, w: 90, h: 80, zone: "Zone A — West Hall" },
-  { spaceNumber: "A03", category: "Standard Exhibition Stall", size: "3m x 3m", price: 175000, x: 120, y: 264, w: 90, h: 80, zone: "Zone A — West Hall" },
-  { spaceNumber: "A04", category: "Standard Exhibition Stall", size: "3m x 3m", price: 175000, x: 214, y: 264, w: 90, h: 80, zone: "Zone A — West Hall" },
-  { spaceNumber: "A05", category: "Corner Stall",              size: "3m x 4m", price: 225000, x: 120, y: 348, w: 90, h: 80, zone: "Zone A — West Hall" },
-  { spaceNumber: "A06", category: "Corner Stall",              size: "3m x 4m", price: 225000, x: 214, y: 348, w: 90, h: 80, zone: "Zone A — West Hall" },
+  { spaceNumber: "A01", category: "Standard Exhibition Stall", size: "3m x 3m", price: 350, x: 120, y: 180, w: 90, h: 80, zone: "Zone A — West Hall" },
+  { spaceNumber: "A02", category: "Standard Exhibition Stall", size: "3m x 3m", price: 350, x: 214, y: 180, w: 90, h: 80, zone: "Zone A — West Hall" },
+  { spaceNumber: "A03", category: "Standard Exhibition Stall", size: "3m x 3m", price: 300, x: 120, y: 264, w: 90, h: 80, zone: "Zone A — West Hall" },
+  { spaceNumber: "A04", category: "Standard Exhibition Stall", size: "3m x 3m", price: 300, x: 214, y: 264, w: 90, h: 80, zone: "Zone A — West Hall" },
+  { spaceNumber: "A05", category: "Corner Stall",              size: "3m x 4m", price: 450, x: 120, y: 348, w: 90, h: 80, zone: "Zone A — West Hall" },
+  { spaceNumber: "A06", category: "Corner Stall",              size: "3m x 4m", price: 450, x: 214, y: 348, w: 90, h: 80, zone: "Zone A — West Hall" },
   // Zone B — Central Hall
-  { spaceNumber: "B01", category: "Standard Exhibition Stall", size: "4m x 3m", price: 210000, x: 380, y: 180, w: 110, h: 90, zone: "Zone B — Central Hall" },
-  { spaceNumber: "B02", category: "Standard Exhibition Stall", size: "4m x 3m", price: 210000, x: 494, y: 180, w: 110, h: 90, zone: "Zone B — Central Hall" },
-  { spaceNumber: "B03", category: "Standard Exhibition Stall", size: "4m x 3m", price: 200000, x: 380, y: 274, w: 110, h: 90, zone: "Zone B — Central Hall" },
-  { spaceNumber: "B04", category: "Standard Exhibition Stall", size: "4m x 3m", price: 200000, x: 494, y: 274, w: 110, h: 90, zone: "Zone B — Central Hall" },
-  { spaceNumber: "B05", category: "Premium Island",            size: "8m x 3m", price: 420000, x: 380, y: 368, w: 224, h: 80, zone: "Zone B — Central Hall" },
+  { spaceNumber: "B01", category: "Standard Exhibition Stall", size: "4m x 3m", price: 400, x: 380, y: 180, w: 110, h: 90, zone: "Zone B — Central Hall" },
+  { spaceNumber: "B02", category: "Standard Exhibition Stall", size: "4m x 3m", price: 400, x: 494, y: 180, w: 110, h: 90, zone: "Zone B — Central Hall" },
+  { spaceNumber: "B03", category: "Standard Exhibition Stall", size: "4m x 3m", price: 380, x: 380, y: 274, w: 110, h: 90, zone: "Zone B — Central Hall" },
+  { spaceNumber: "B04", category: "Standard Exhibition Stall", size: "4m x 3m", price: 380, x: 494, y: 274, w: 110, h: 90, zone: "Zone B — Central Hall" },
+  { spaceNumber: "B05", category: "Premium Island",            size: "8m x 3m", price: 800, x: 380, y: 368, w: 224, h: 80, zone: "Zone B — Central Hall" },
   // Zone C — East Hall
-  { spaceNumber: "C01", category: "Standard Exhibition Stall", size: "4m x 3m", price: 205000, x: 680, y: 180, w: 100, h: 90, zone: "Zone C — East Hall" },
-  { spaceNumber: "C02", category: "Standard Exhibition Stall", size: "4m x 3m", price: 205000, x: 784, y: 180, w: 100, h: 90, zone: "Zone C — East Hall" },
-  { spaceNumber: "C03", category: "Standard Exhibition Stall", size: "4m x 3m", price: 195000, x: 680, y: 274, w: 100, h: 90, zone: "Zone C — East Hall" },
-  { spaceNumber: "C04", category: "Standard Exhibition Stall", size: "4m x 3m", price: 195000, x: 784, y: 274, w: 100, h: 90, zone: "Zone C — East Hall" },
-  { spaceNumber: "C05", category: "Premium Island",            size: "8m x 3m", price: 410000, x: 680, y: 368, w: 204, h: 80, zone: "Zone C — East Hall" },
+  { spaceNumber: "C01", category: "Standard Exhibition Stall", size: "4m x 3m", price: 390, x: 680, y: 180, w: 100, h: 90, zone: "Zone C — East Hall" },
+  { spaceNumber: "C02", category: "Standard Exhibition Stall", size: "4m x 3m", price: 390, x: 784, y: 180, w: 100, h: 90, zone: "Zone C — East Hall" },
+  { spaceNumber: "C03", category: "Standard Exhibition Stall", size: "4m x 3m", price: 370, x: 680, y: 274, w: 100, h: 90, zone: "Zone C — East Hall" },
+  { spaceNumber: "C04", category: "Standard Exhibition Stall", size: "4m x 3m", price: 370, x: 784, y: 274, w: 100, h: 90, zone: "Zone C — East Hall" },
+  { spaceNumber: "C05", category: "Premium Island",            size: "8m x 3m", price: 780, x: 680, y: 368, w: 204, h: 80, zone: "Zone C — East Hall" },
   // Zone D — Innovation Pods
-  { spaceNumber: "D01", category: "Compact Pod", size: "2m x 2m", price: 95000,  x: 960, y: 180, w: 110, h: 80, zone: "Zone D — Innovation Pods" },
-  { spaceNumber: "D02", category: "Compact Pod", size: "2m x 2m", price: 95000,  x: 960, y: 264, w: 110, h: 80, zone: "Zone D — Innovation Pods" },
-  { spaceNumber: "D03", category: "Compact Pod", size: "2m x 2m", price: 88000,  x: 960, y: 348, w: 110, h: 80, zone: "Zone D — Innovation Pods" },
-  { spaceNumber: "D04", category: "Compact Pod", size: "2m x 2m", price: 88000,  x: 960, y: 432, w: 110, h: 80, zone: "Zone D — Innovation Pods" },
+  { spaceNumber: "D01", category: "Compact Pod", size: "2m x 2m", price: 250,  x: 960, y: 180, w: 110, h: 80, zone: "Zone D — Innovation Pods" },
+  { spaceNumber: "D02", category: "Compact Pod", size: "2m x 2m", price: 250,  x: 960, y: 264, w: 110, h: 80, zone: "Zone D — Innovation Pods" },
+  { spaceNumber: "D03", category: "Compact Pod", size: "2m x 2m", price: 200,  x: 960, y: 348, w: 110, h: 80, zone: "Zone D — Innovation Pods" },
+  { spaceNumber: "D04", category: "Compact Pod", size: "2m x 2m", price: 200,  x: 960, y: 432, w: 110, h: 80, zone: "Zone D — Innovation Pods" },
 ];
 
 // ─── Event 2 spaces ───────────────────────────────────────────────────────────
 
 const MAKERS_SPACES: RawSpace[] = [
   // Design Studios (Corner Stalls ×4)
-  { spaceNumber: "M01", category: "Corner Stall", size: "3m x 3m", price: 45000, x: 120, y: 180, w: 90, h: 80, zone: "Design Studios" },
-  { spaceNumber: "M02", category: "Corner Stall", size: "3m x 3m", price: 45000, x: 214, y: 180, w: 90, h: 80, zone: "Design Studios" },
-  { spaceNumber: "M03", category: "Corner Stall", size: "3m x 3m", price: 45000, x: 120, y: 264, w: 90, h: 80, zone: "Design Studios" },
-  { spaceNumber: "M04", category: "Corner Stall", size: "3m x 3m", price: 45000, x: 214, y: 264, w: 90, h: 80, zone: "Design Studios" },
+  { spaceNumber: "M01", category: "Corner Stall", size: "3m x 3m", price: 250, x: 120, y: 180, w: 90, h: 80, zone: "Design Studios" },
+  { spaceNumber: "M02", category: "Corner Stall", size: "3m x 3m", price: 250, x: 214, y: 180, w: 90, h: 80, zone: "Design Studios" },
+  { spaceNumber: "M03", category: "Corner Stall", size: "3m x 3m", price: 250, x: 120, y: 264, w: 90, h: 80, zone: "Design Studios" },
+  { spaceNumber: "M04", category: "Corner Stall", size: "3m x 3m", price: 250, x: 214, y: 264, w: 90, h: 80, zone: "Design Studios" },
   // Artisan Market (Compact Pods ×8)
-  { spaceNumber: "M05", category: "Compact Pod", size: "2m x 2m", price: 25000, x: 530, y: 180, w: 90, h: 80, zone: "Artisan Market" },
-  { spaceNumber: "M06", category: "Compact Pod", size: "2m x 2m", price: 25000, x: 624, y: 180, w: 90, h: 80, zone: "Artisan Market" },
-  { spaceNumber: "M07", category: "Compact Pod", size: "2m x 2m", price: 25000, x: 718, y: 180, w: 90, h: 80, zone: "Artisan Market" },
-  { spaceNumber: "M08", category: "Compact Pod", size: "2m x 2m", price: 25000, x: 530, y: 264, w: 90, h: 80, zone: "Artisan Market" },
-  { spaceNumber: "M09", category: "Compact Pod", size: "2m x 2m", price: 25000, x: 624, y: 264, w: 90, h: 80, zone: "Artisan Market" },
-  { spaceNumber: "M10", category: "Compact Pod", size: "2m x 2m", price: 25000, x: 718, y: 264, w: 90, h: 80, zone: "Artisan Market" },
-  { spaceNumber: "M11", category: "Compact Pod", size: "2m x 2m", price: 25000, x: 530, y: 348, w: 90, h: 80, zone: "Artisan Market" },
-  { spaceNumber: "M12", category: "Compact Pod", size: "2m x 2m", price: 25000, x: 624, y: 348, w: 90, h: 80, zone: "Artisan Market" },
+  { spaceNumber: "M05", category: "Compact Pod", size: "2m x 2m", price: 150, x: 530, y: 180, w: 90, h: 80, zone: "Artisan Market" },
+  { spaceNumber: "M06", category: "Compact Pod", size: "2m x 2m", price: 150, x: 624, y: 180, w: 90, h: 80, zone: "Artisan Market" },
+  { spaceNumber: "M07", category: "Compact Pod", size: "2m x 2m", price: 150, x: 718, y: 180, w: 90, h: 80, zone: "Artisan Market" },
+  { spaceNumber: "M08", category: "Compact Pod", size: "2m x 2m", price: 150, x: 530, y: 264, w: 90, h: 80, zone: "Artisan Market" },
+  { spaceNumber: "M09", category: "Compact Pod", size: "2m x 2m", price: 150, x: 624, y: 264, w: 90, h: 80, zone: "Artisan Market" },
+  { spaceNumber: "M10", category: "Compact Pod", size: "2m x 2m", price: 150, x: 718, y: 264, w: 90, h: 80, zone: "Artisan Market" },
+  { spaceNumber: "M11", category: "Compact Pod", size: "2m x 2m", price: 150, x: 530, y: 348, w: 90, h: 80, zone: "Artisan Market" },
+  { spaceNumber: "M12", category: "Compact Pod", size: "2m x 2m", price: 150, x: 624, y: 348, w: 90, h: 80, zone: "Artisan Market" },
 ];
 
 // ─── Main ─────────────────────────────────────────────────────────────────────

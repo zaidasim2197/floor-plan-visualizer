@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
-import { eventConfig, whatsappLink } from "@/config/event";
+import { eventConfig, emailLink } from "@/config/event";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -100,7 +100,7 @@ function ContactPage() {
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-6 shadow-xs">
               <div className="flex items-center gap-3">
                 <MessageSquare className="h-6 w-6 text-emerald-600" />
-                <h3 className="text-lg font-bold text-foreground">Instant WhatsApp Assistance</h3>
+                <h3 className="text-lg font-bold text-foreground">Instant Email Assistance</h3>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
                 For immediate space reservation updates, receipt verification, or urgent inquiries:
@@ -114,11 +114,11 @@ function ContactPage() {
                     className="w-full justify-between border-emerald-600/30 bg-background text-emerald-800 dark:text-emerald-300 font-bold hover:bg-emerald-500/10"
                   >
                     <a
-                      href={whatsappLink(num, `Hello, I need assistance regarding ${eventConfig.name}.`)}
+                      href={emailLink(num, `Hello, I need assistance regarding ${eventConfig.name}.`)}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      <span>WhatsApp Line {i + 1} ({num})</span>
+                      <span>Support Line {i + 1} ({num})</span>
                       <Send className="h-4 w-4" />
                     </a>
                   </Button>
@@ -171,7 +171,7 @@ function ContactPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="contact-phone">Phone / WhatsApp Number *</Label>
+                      <Label htmlFor="contact-phone">Phone Number Number *</Label>
                       <Input id="contact-phone" required placeholder="+92 300 1234567" />
                     </div>
                   </div>

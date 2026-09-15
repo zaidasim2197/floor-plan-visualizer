@@ -109,7 +109,7 @@ function EventEditor({ mode, onClose }: { mode: "new" | "edit"; onClose: () => v
     ["endDate", "Ends · Pakistan time", "datetime-local"],
     ["email", "Organiser email", "email"],
     ["phone", "Contact phone", "tel"],
-    ["whatsapp", "WhatsApp number", "tel"],
+    ["whatsapp", "Support Contact", "tel"],
     ["holdMinutes", "Reservation hold · minutes", "number"],
   ];
   const submit = (e: FormEvent) => {

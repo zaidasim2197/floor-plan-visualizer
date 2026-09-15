@@ -47,7 +47,7 @@ export const defaultEventConfig = {
     sandboxCheckoutUrl: "https://sandbox.api.getsafepay.com/checkout/pay",
     environment: "sandbox",
   },
-  floorPlanLabel: "Demo Exhibition Layout",
+  floorPlanLabel: "Exhibition Layout",
 };
 
 export type EventConfig = typeof defaultEventConfig;
@@ -56,5 +56,5 @@ export function applyEventConfig(config: EventConfig) {
   eventConfig = config;
 }
 
-export const whatsappLink = (number: string | undefined, message: string) =>
-  `https://wa.me/${(number ?? eventConfig.contact.phone).replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
+export const emailLink = (email: string | undefined, subject: string) =>
+  `mailto:${email ?? eventConfig.contact.email}?subject=${encodeURIComponent(subject)}`;

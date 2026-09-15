@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { eventConfig, whatsappLink } from "@/config/event";
+import { eventConfig, emailLink } from "@/config/event";
 import { getStall } from "@/data/floor-plan";
 import { activeEventId, activeEvent } from "@/lib/event-store";
 import { formatMoney } from "@/lib/booking-format";
@@ -39,6 +39,7 @@ import {
   FileCheck,
   X,
   Eye,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -84,9 +85,9 @@ function BookStallPage() {
   });
   const [phone, setPhone] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem(`venueflow_draft_phone_${stallId}`) || localStorage.getItem("venueflow_draft_phone") || "";
+      return localStorage.getItem(`venueflow_draft_phone_${stallId}`) || localStorage.getItem("venueflow_draft_phone") || "+1 ";
     }
-    return "";
+    return "+1 ";
   });
   const [productService, setProductService] = useState(() => {
     if (typeof window !== "undefined") {
@@ -197,6 +198,7 @@ function BookStallPage() {
   const [error, setError] = useState<string | null>(null);
   const [paymentRefInput, setPaymentRefInput] = useState("");
   const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [showBankDetails, setShowBankDetails] = useState(false);
 
   // Payment Proof Image Upload State
   const [proofImageBase64, setProofImageBase64] = useState<string | null>(null);
@@ -817,7 +819,7 @@ function BookStallPage() {
                 Space {stall.stallNumber} Checkout
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                {stall.category} • {stall.dimensions} • Zone {stall.zone}
+                {stall.category} • {stall.zone}
               </p>
             </div>
             <div className="text-right">
@@ -1021,7 +1023,7 @@ function BookStallPage() {
                           : "text-muted-foreground hover:text-foreground")
                       }
                     >
-                      <CreditCard className="h-3.5 w-3.5" /> PayFast Sandbox
+                      <CreditCard className="h-3.5 w-3.5" /> PayFast
                     </button>
 
                     {/* SAFEPAY COMMENTED OUT FOR NOW
@@ -1073,7 +1075,7 @@ function BookStallPage() {
                         Clicking below will securely POST your booking reference (
                         <strong>{currentBooking.reference}</strong>) and rental amount (
                         <strong>{formatMoney(currentBooking.amount)}</strong>) to the official
-                        PayFast Sandbox Gateway environment.
+                        PayFast Gateway environment.
                       </p>
                     </div>
 
@@ -1248,27 +1250,50 @@ function BookStallPage() {
                 </div>
 
                 {/* BANK ACCOUNT DETAILS CARD */}
-                <div className="rounded-lg bg-secondary p-4 space-y-2.5 text-xs sm:text-sm font-mono border border-border">
-                  <div className="flex justify-between border-b border-border/50 pb-1.5">
-                    <span className="text-muted-foreground">Bank Name:</span>
-                    <span className="font-bold text-foreground">Global Trust Bank (GTB)</span>
+                <div className="relative rounded-lg bg-secondary p-4 space-y-2.5 text-xs sm:text-sm font-mono border border-border">
+                  <div className={`space-y-2.5 transition-all duration-300 ${!showBankDetails ? 'blur-sm select-none opacity-50' : ''}`}>
+                    <div className="flex justify-between border-b border-border/50 pb-1.5">
+                      <span className="text-muted-foreground">Bank Name:</span>
+                      <span className="font-bold text-foreground">Global Trust Bank (GTB)</span>
+                    </div>
+                    <div className="flex justify-between border-b border-border/50 pb-1.5">
+                      <span className="text-muted-foreground">Account Title:</span>
+                      <span className="font-bold text-foreground">VenueFlow Events Ltd</span>
+                    </div>
+                    <div className="flex justify-between border-b border-border/50 pb-1.5">
+                      <span className="text-muted-foreground">Routing / Account:</span>
+                      <span className="font-bold text-foreground">121000248 / 9988776655</span>
+                    </div>
+                    <div className="flex justify-between border-b border-border/50 pb-1.5">
+                      <span className="text-muted-foreground">SWIFT Code:</span>
+                      <span className="font-bold text-foreground">GTBUS33</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Booking Reference:</span>
+                      <span className="font-bold text-primary">{currentBooking.reference}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between border-b border-border/50 pb-1.5">
-                    <span className="text-muted-foreground">Account Title:</span>
-                    <span className="font-bold text-foreground">VenueFlow Events Ltd</span>
-                  </div>
-                  <div className="flex justify-between border-b border-border/50 pb-1.5">
-                    <span className="text-muted-foreground">Routing / Account:</span>
-                    <span className="font-bold text-foreground">121000248 / 9988776655</span>
-                  </div>
-                  <div className="flex justify-between border-b border-border/50 pb-1.5">
-                    <span className="text-muted-foreground">SWIFT Code:</span>
-                    <span className="font-bold text-foreground">GTBUS33</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Booking Reference:</span>
-                    <span className="font-bold text-primary">{currentBooking.reference}</span>
-                  </div>
+                  
+                  {!showBankDetails && (
+                    <button 
+                      type="button" 
+                      onClick={() => setShowBankDetails(true)}
+                      className="absolute top-2 right-2 p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors bg-secondary/50"
+                      title="Reveal Bank Details"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  )}
+                  {showBankDetails && (
+                    <button 
+                      type="button" 
+                      onClick={() => setShowBankDetails(false)}
+                      className="absolute top-2 right-2 p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                      title="Hide Bank Details"
+                    >
+                      <EyeOff className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
 
                 {/* WHATSAPP RECEIPT SUBMISSION (HIDDEN AS REQUESTED - KEPT IN CODE) */}
@@ -1276,26 +1301,26 @@ function BookStallPage() {
                   <div className="flex items-center gap-2">
                     <Send className="h-5 w-5 text-emerald-600" />
                     <h4 className="text-sm font-bold text-foreground">
-                      Send Receipt Screenshot via WhatsApp
+                      Send Receipt Screenshot via Email
                     </h4>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     After making the bank transfer, send your receipt screenshot directly to our
-                    organizing team on WhatsApp for fast verification.
+                    organizing team via Email for fast verification.
                   </p>
                   <Button
                     asChild
                     className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold h-11"
                   >
                     <a
-                      href={whatsappLink(
-                        eventConfig.contact.whatsapp[0],
+                      href={emailLink(
+                        eventConfig.contact.email,
                         `Bank Transfer Receipt:\nBooking ID: ${currentBooking.reference}\nSpace: ${currentBooking.stallId}\nCompany: ${currentBooking.companyName}\nAmount: USD ${currentBooking.amount.toLocaleString()}`,
                       )}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      <Send className="mr-2 h-4 w-4" /> Send Receipt on WhatsApp
+                      <Send className="mr-2 h-4 w-4" /> Send Receipt via Email
                     </a>
                   </Button>
                 </div>
@@ -1309,7 +1334,7 @@ function BookStallPage() {
                         Upload Payment Proof Receipt / Deposit Slip
                       </h4>
                       <p className="text-xs text-muted-foreground">
-                        If you prefer not to use WhatsApp, upload your bank transfer deposit receipt
+                        If you prefer not to use Email, upload your bank transfer deposit receipt
                         or screenshot directly below.
                       </p>
                     </div>
@@ -1629,7 +1654,7 @@ function BookStallPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Phone / WhatsApp *</Label>
+                      <Label htmlFor="phone">Phone Number *</Label>
                       <Input
                         id="phone"
                         required
@@ -1679,7 +1704,7 @@ function BookStallPage() {
                             <CreditCard className="h-4 w-4 text-primary shrink-0" /> PayFast Gateway
                           </div>
                           <p className="mt-1 text-[10px] text-muted-foreground leading-snug">
-                            PayFast Sandbox Gateway
+                            PayFast Gateway
                           </p>
                         </div>
                       </label>
@@ -1734,7 +1759,7 @@ function BookStallPage() {
                             <Building2 className="h-4 w-4 text-primary shrink-0" /> Bank Transfer
                           </div>
                           <p className="mt-1 text-[10px] text-muted-foreground leading-snug">
-                            IBAN + WhatsApp Receipt
+                            IBAN
                           </p>
                         </div>
                       </label>

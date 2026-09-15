@@ -441,7 +441,7 @@ export function createBooking(
       "CUSTOMER",
       booking.email,
       `Booking request received — ${booking.reference}`,
-      `We have received your request for space ${booking.stallId}. Your space is temporarily reserved for ${eventConfig.booking.paymentPendingMinutes} minutes while payment is verified. This is not yet a confirmed booking — please complete payment and send your receipt via WhatsApp.`,
+      `We have received your request for space ${booking.stallId}. Your space is temporarily reserved for ${eventConfig.booking.paymentPendingMinutes} minutes while payment is verified. This is not yet a confirmed booking — please complete payment and send your receipt via Email.`,
       booking.reference,
     );
   }

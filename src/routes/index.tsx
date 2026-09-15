@@ -16,7 +16,7 @@ import { FloorMap, FloorMapLegend } from "@/components/site/FloorMap";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { CountdownTimer } from "@/components/site/CountdownTimer";
 import { Button } from "@/components/ui/button";
-import { eventConfig, whatsappLink } from "@/config/event";
+import { eventConfig, emailLink } from "@/config/event";
 import { stalls } from "@/data/floor-plan";
 import { metrics, stallStatusMap, useBookingState } from "@/lib/booking-store";
 import { activeEventId } from "@/lib/event-store";
@@ -333,7 +333,7 @@ function Index() {
             [
               "03",
               "Get confirmed",
-              "Send your payment receipt via WhatsApp or bank ref. Once verified by our team, your space is permanently confirmed.",
+              "Send your payment receipt via Email or bank ref. Once verified by our team, your space is permanently confirmed.",
             ],
           ].map(([num, heading, body]) => (
             <article key={heading} className="rounded-lg border border-border bg-card p-6 relative">
@@ -369,14 +369,14 @@ function Index() {
             </Button>
             <Button asChild size="lg" variant="outline-dark">
               <a
-                href={whatsappLink(
-                  eventConfig.contact.whatsapp[0],
+                href={emailLink(
+                  eventConfig.contact.email,
                   `Hello, I would like to inquire about exhibiting at ${eventConfig.name}.`,
                 )}
                 target="_blank"
                 rel="noreferrer"
               >
-                Inquire on WhatsApp
+                Inquire via Email
               </a>
             </Button>
           </div>

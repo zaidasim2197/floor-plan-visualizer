@@ -1082,7 +1082,7 @@ Response 200:
 {
   "floorPlan": {
     "id": "uuid",
-    "label": "Demo Exhibition Layout",
+    "label": "Exhibition Layout",
     "canvasWidth": 1200,
     "canvasHeight": 800
   },

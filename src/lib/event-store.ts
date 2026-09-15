@@ -16,7 +16,7 @@ interface Catalog {
   activeId: string;
   revision: number;
 }
-const KEY = "venueflow-event-catalog-v2";
+const KEY = "venueflow-event-catalog-v3";
 export const DEFAULT_EVENT_ID = "business-expo";
 const secondSpaces: Stall[] = Array.from({ length: 12 }, (_, i) => ({
   id: `M${String(i + 1).padStart(2, "0")}`,
@@ -133,7 +133,7 @@ export const eventFormSchema = z
     address: z.string().trim().min(5),
     email: z.string().trim().email(),
     phone: z.string().trim().min(7),
-    whatsapp: z.string().regex(/^\+?[\d\s-]{7,20}$/, "Enter a valid WhatsApp number"),
+    whatsapp: z.string().regex(/^\+?[\d\s-]{7,20}$/, "Enter a valid Support Contact"),
     startDate: z.string().min(1),
     endDate: z.string().min(1),
     holdMinutes: z.coerce.number().int().min(5).max(1440),
