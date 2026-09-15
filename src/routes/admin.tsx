@@ -866,7 +866,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         <RevenueSummary bookings={currentBookings} />
         {activeTab === "spaces" && <SpaceManagement bookings={currentBookings} />}
         {/* METRICS OVERVIEW */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {[
             ["Total Spaces", stats.total, "border-border"],
             [
@@ -890,7 +890,6 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               "border-emerald-600/30 text-emerald-800 dark:text-emerald-200",
             ],
             ["Expired", stats.expired, "border-border text-muted-foreground"],
-            ["Conflicts", stats.conflicts, "border-red-500/30 text-red-700 dark:text-red-300"],
           ].map(([label, val, borderStyle]) => (
             <div
               key={label as string}

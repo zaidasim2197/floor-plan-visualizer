@@ -28,7 +28,7 @@ export function RevenueSummary({ bookings }: { bookings: Booking[] }) {
   const summary = summarizeBookings(bookings, stalls);
   return (
     <section
-      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
       aria-label="Occupancy and revenue"
     >
       {[
@@ -42,11 +42,6 @@ export function RevenueSummary({ bookings }: { bookings: Booking[] }) {
           "Awaiting payment / review",
           formatMoney(summary.pending),
           "Active reservations · not received revenue",
-        ],
-        [
-          "Refunds to reconcile",
-          formatMoney(summary.refunds),
-          "Pending manual refund verification",
         ],
       ].map(([label, value, hint]) => (
         <div key={label} className="rounded-xl border border-border bg-card p-5">
