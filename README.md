@@ -52,3 +52,5 @@ npm run preview
    ```
 2. Populate `.env` with your actual local configuration values.
 3. **NEVER commit `.env`** or any files containing credentials to version control.
+## Security & Pre-commit Setup
+Local setup: `pip install pre-commit && pre-commit install`
