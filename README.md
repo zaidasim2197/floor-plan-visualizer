@@ -45,3 +45,10 @@ npm run preview
 - **URL**: `/admin`
 - **Username**: `admin`
 - **Password**: `Admin@123`
+## Environment Setup
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+2. Populate `.env` with your actual local configuration values.
+3. **NEVER commit `.env`** or any files containing credentials to version control.
