@@ -35,3 +35,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Security & Secrets
+/env
+!.env.example
+*.pem
+*.key
+*serviceAccount*.json
+firebase-adminsdk*.json
+google-credentials*.json
